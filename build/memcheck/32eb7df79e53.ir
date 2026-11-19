@@ -1,0 +1,312 @@
+; Three-address intermediate representation
+; source: test/19_scanf.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 3 bytes 37,100,0    ; "%d"
+str @.str1 len 11 bytes 110,61,37,100,32,97,61,37,100,10,0    ; "n=%d a=%d\n"
+str @.str2 len 6 bytes 37,100,32,37,100,0    ; "%d %d"
+str @.str3 len 15 bytes 110,61,37,100,32,37,100,32,37,100,32,37,100,10,0    ; "n=%d %d %d %d\n"
+str @.str4 len 3 bytes 37,115,0    ; "%s"
+str @.str5 len 23 bytes 110,61,37,100,32,119,111,114,100,61,91,37,115,93,32,108,101,110,61,37,100,10,0    ; "n=%d word=[%s] len=%d\n"
+str @.str6 len 3 bytes 37,99,0    ; "%c"
+str @.str7 len 12 bytes 110,61,37,100,32,119,115,61,37,100,10,0    ; "n=%d ws=%d\n"
+str @.str8 len 12 bytes 110,61,37,100,32,99,104,61,37,99,10,0    ; "n=%d ch=%c\n"
+str @.str9 len 17 bytes 99,111,117,110,116,61,37,100,32,115,117,109,61,37,100,10,0    ; "count=%d sum=%d\n"
+str @.str10 len 4 bytes 37,100,32,0    ; "%d "
+str @.str11 len 2 bytes 10,0    ; "\n"
+str @.str12 len 18 bytes 116,97,105,108,32,110,61,37,100,32,115,117,109,61,37,100,10,0    ; "tail n=%d sum=%d\n"
+str @.str13 len 9 bytes 37,100,58,37,115,58,37,100,0    ; "%d:%s:%d"
+str @.str14 len 4 bytes 109,105,100,0    ; "mid"
+str @.str15 len 10 bytes 98,117,102,61,91,37,115,93,10,0    ; "buf=[%s]\n"
+str @.str16 len 6 bytes 97,61,37,100,10,0    ; "a=%d\n"
+str @.str17 len 8 bytes 49,49,49,32,50,50,50,0    ; "111 222"
+str @.str18 len 7 bytes 37,100,32,37,100,10,0    ; "%d %d\n"
+str @.str19 len 11 bytes 116,111,107,101,110,32,114,101,115,116,0    ; "token rest"
+str @.str20 len 6 bytes 91,37,115,93,10,0    ; "[%s]\n"
+str @.str21 len 9 bytes 37,115,47,37,99,47,37,100,0    ; "%s/%c/%d"
+str @.str22 len 2 bytes 120,0    ; "x"
+str @.str23 len 9 bytes 91,37,115,93,32,37,100,10,0    ; "[%s] %d\n"
+.enddata
+
+extern @scanf ret int nparams 1 variadic
+extern @printf ret int nparams 1 variadic
+extern @strlen ret int nparams 1
+extern @sprintf ret int nparams 2 variadic
+extern @sscanf ret int nparams 2 variadic
+
+func @main ret int retctype "int" nparams 0 frame 200 regs 157 temps 155    ; line 3
+  .local a : type int ctype "int" size 4 align 4 slot 0
+  .local b : type int ctype "int" size 4 align 4 slot 4
+  .local n : type int ctype "int" size 4 align 4 slot 8
+  .local word : type str ctype "char [32]" size 32 align 1 slot 12
+  .local line : type str ctype "char [64]" size 64 align 1 slot 44
+  .local buf : type str ctype "char [64]" size 64 align 1 slot 108
+  .local values : type ptr ctype "int [5]" size 20 align 4 slot 172
+  .local ch : type char ctype "char" size 1 align 1 slot 192
+  .reg %i : type int ctype "int"
+  .reg %sum : type int ctype "int"
+begin
+  %t2 = addr n   ; line 15
+  %t3 = addr @.str0   ; line 15
+  %t4 = addr a   ; line 15
+  param %t3 : str   ; line 15
+  param %t4 : ptr   ; line 15
+  %t5 = call @scanf, 2   ; line 15
+  store.w %t2, %t5   ; line 15
+  %t6 = addr @.str1   ; line 16
+  %t7 = addr n   ; line 16
+  %t8 = load.w %t7   ; line 16
+  %t9 = addr a   ; line 16
+  %t10 = load.w %t9   ; line 16
+  param %t6 : str   ; line 16
+  param %t8 : int   ; line 16
+  param %t10 : int   ; line 16
+  %t11 = call @printf, 3   ; line 16
+  %t12 = addr n   ; line 18
+  %t13 = addr @.str2   ; line 18
+  %t14 = addr a   ; line 18
+  %t15 = addr b   ; line 18
+  param %t13 : str   ; line 18
+  param %t14 : ptr   ; line 18
+  param %t15 : ptr   ; line 18
+  %t16 = call @scanf, 3   ; line 18
+  store.w %t12, %t16   ; line 18
+  %t17 = addr @.str3   ; line 19
+  %t18 = addr n   ; line 19
+  %t19 = load.w %t18   ; line 19
+  %t20 = addr a   ; line 19
+  %t21 = load.w %t20   ; line 19
+  %t22 = addr b   ; line 19
+  %t23 = load.w %t22   ; line 19
+  %t24 = addr a   ; line 19
+  %t25 = load.w %t24   ; line 19
+  %t26 = addr b   ; line 19
+  %t27 = load.w %t26   ; line 19
+  %t28 = %t25 * %t27   ; line 19
+  param %t17 : str   ; line 19
+  param %t19 : int   ; line 19
+  param %t21 : int   ; line 19
+  param %t23 : int   ; line 19
+  param %t28 : int   ; line 19
+  %t29 = call @printf, 5   ; line 19
+  %t30 = addr n   ; line 21
+  %t31 = addr @.str4   ; line 21
+  %t32 = addr word   ; line 21
+  param %t31 : str   ; line 21
+  param %t32 : str   ; line 21
+  %t33 = call @scanf, 2   ; line 21
+  store.w %t30, %t33   ; line 21
+  %t34 = addr @.str5   ; line 22
+  %t35 = addr n   ; line 22
+  %t36 = load.w %t35   ; line 22
+  %t37 = addr word   ; line 22
+  %t38 = addr word   ; line 22
+  param %t38 : str   ; line 22
+  %t39 = call @strlen, 1   ; line 22
+  param %t34 : str   ; line 22
+  param %t36 : int   ; line 22
+  param %t37 : str   ; line 22
+  param %t39 : int   ; line 22
+  %t40 = call @printf, 4   ; line 22
+  %t41 = addr n   ; line 24
+  %t42 = addr @.str6   ; line 24
+  %t43 = addr ch   ; line 24
+  param %t42 : str   ; line 24
+  param %t43 : str   ; line 24
+  %t44 = call @scanf, 2   ; line 24
+  store.w %t41, %t44   ; line 24
+  %t45 = addr @.str7   ; line 25
+  %t46 = addr n   ; line 25
+  %t47 = load.w %t46   ; line 25
+  %t48 = addr ch   ; line 25
+  %t49 = load.b %t48   ; line 25
+  %t50 = %t49 == 10   ; line 25
+  param %t45 : str   ; line 25
+  param %t47 : int   ; line 25
+  param %t50 : int   ; line 25
+  %t51 = call @printf, 3   ; line 25
+  %t52 = addr n   ; line 27
+  %t53 = addr @.str6   ; line 27
+  %t54 = addr ch   ; line 27
+  param %t53 : str   ; line 27
+  param %t54 : str   ; line 27
+  %t55 = call @scanf, 2   ; line 27
+  store.w %t52, %t55   ; line 27
+  %t56 = addr @.str8   ; line 28
+  %t57 = addr n   ; line 28
+  %t58 = load.w %t57   ; line 28
+  %t59 = addr ch   ; line 28
+  %t60 = load.b %t59   ; line 28
+  param %t56 : str   ; line 28
+  param %t58 : int   ; line 28
+  param %t60 : char   ; line 28
+  %t61 = call @printf, 3   ; line 28
+  %t62 = addr @.str0   ; line 31
+  %t63 = addr n   ; line 31
+  param %t62 : str   ; line 31
+  param %t63 : ptr   ; line 31
+  %t64 = call @scanf, 2   ; line 31
+  %sum = 0   ; line 32
+  %i = 0   ; line 33
+.L1:
+  %t65 = addr n   ; line 33
+  %t66 = load.w %t65   ; line 33
+  %t67 = %i < %t66   ; line 33
+  ifFalse %t67 goto .L4   ; line 33
+  %t68 = addr @.str0   ; line 33
+  %t69 = addr values   ; line 33
+  %t70 = %i * 4   ; line 33
+  %t71 = %t69 + %t70   ; line 33
+  param %t68 : str   ; line 33
+  param %t71 : ptr   ; line 33
+  %t72 = call @scanf, 2   ; line 33
+  %t73 = addr values   ; line 33
+  %t74 = %i * 4   ; line 33
+  %t75 = %t73 + %t74   ; line 33
+  %t76 = load.w %t75   ; line 33
+  %t77 = %sum + %t76   ; line 33
+  %sum = %t77   ; line 33
+  %t78 = %i + 1   ; line 33
+  %i = %t78   ; line 33
+  goto .L1   ; line 33
+.L4:
+  %t79 = addr @.str9   ; line 34
+  %t80 = addr n   ; line 34
+  %t81 = load.w %t80   ; line 34
+  param %t79 : str   ; line 34
+  param %t81 : int   ; line 34
+  param %sum : int   ; line 34
+  %t82 = call @printf, 3   ; line 34
+  %i = 0   ; line 35
+.L5:
+  %t83 = addr n   ; line 35
+  %t84 = load.w %t83   ; line 35
+  %t85 = %i < %t84   ; line 35
+  ifFalse %t85 goto .L8   ; line 35
+  %t86 = addr @.str10   ; line 35
+  %t87 = addr values   ; line 35
+  %t88 = %i * 4   ; line 35
+  %t89 = %t87 + %t88   ; line 35
+  %t90 = load.w %t89   ; line 35
+  param %t86 : str   ; line 35
+  param %t90 : int   ; line 35
+  %t91 = call @printf, 2   ; line 35
+  %t92 = %i + 1   ; line 35
+  %i = %t92   ; line 35
+  goto .L5   ; line 35
+.L8:
+  %t93 = addr @.str11   ; line 36
+  param %t93 : str   ; line 36
+  %t94 = call @printf, 1   ; line 36
+  %t95 = addr n   ; line 39
+  store.w %t95, 0   ; line 39
+  %sum = 0   ; line 40
+.L9:
+  %t96 = addr @.str0   ; line 41
+  %t97 = addr a   ; line 41
+  param %t96 : str   ; line 41
+  param %t97 : ptr   ; line 41
+  %t98 = call @scanf, 2   ; line 41
+  %t99 = %t98 == 1   ; line 41
+  ifFalse %t99 goto .L11   ; line 41
+  %t100 = addr n   ; line 41
+  %t101 = addr n   ; line 41
+  %t102 = load.w %t101   ; line 41
+  %t103 = %t102 + 1   ; line 41
+  store.w %t100, %t103   ; line 41
+  %t104 = addr a   ; line 41
+  %t105 = load.w %t104   ; line 41
+  %t106 = %sum + %t105   ; line 41
+  %sum = %t106   ; line 41
+  goto .L9   ; line 41
+.L11:
+  %t107 = addr @.str12   ; line 42
+  %t108 = addr n   ; line 42
+  %t109 = load.w %t108   ; line 42
+  param %t107 : str   ; line 42
+  param %t109 : int   ; line 42
+  param %sum : int   ; line 42
+  %t110 = call @printf, 3   ; line 42
+  %t111 = addr buf   ; line 45
+  %t112 = addr @.str13   ; line 45
+  %t113 = 42   ; line 45
+  %t114 = addr @.str14   ; line 45
+  %t115 = -7   ; line 45
+  param %t111 : str   ; line 45
+  param %t112 : str   ; line 45
+  param %t113 : int   ; line 45
+  param %t114 : str   ; line 45
+  param %t115 : int   ; line 45
+  %t116 = call @sprintf, 5   ; line 45
+  %t117 = addr @.str15   ; line 46
+  %t118 = addr buf   ; line 46
+  param %t117 : str   ; line 46
+  param %t118 : str   ; line 46
+  %t119 = call @printf, 2   ; line 46
+  %t120 = addr buf   ; line 47
+  %t121 = addr @.str0   ; line 47
+  %t122 = addr a   ; line 47
+  param %t120 : str   ; line 47
+  param %t121 : str   ; line 47
+  param %t122 : ptr   ; line 47
+  %t123 = call @sscanf, 3   ; line 47
+  %t124 = addr @.str16   ; line 48
+  %t125 = addr a   ; line 48
+  %t126 = load.w %t125   ; line 48
+  param %t124 : str   ; line 48
+  param %t126 : int   ; line 48
+  %t127 = call @printf, 2   ; line 48
+  %t128 = addr @.str17   ; line 49
+  %t129 = addr @.str2   ; line 49
+  %t130 = addr a   ; line 49
+  %t131 = addr b   ; line 49
+  param %t128 : str   ; line 49
+  param %t129 : str   ; line 49
+  param %t130 : ptr   ; line 49
+  param %t131 : ptr   ; line 49
+  %t132 = call @sscanf, 4   ; line 49
+  %t133 = addr @.str18   ; line 50
+  %t134 = addr a   ; line 50
+  %t135 = load.w %t134   ; line 50
+  %t136 = addr b   ; line 50
+  %t137 = load.w %t136   ; line 50
+  param %t133 : str   ; line 50
+  param %t135 : int   ; line 50
+  param %t137 : int   ; line 50
+  %t138 = call @printf, 3   ; line 50
+  %t139 = addr @.str19   ; line 51
+  %t140 = addr @.str4   ; line 51
+  %t141 = addr word   ; line 51
+  param %t139 : str   ; line 51
+  param %t140 : str   ; line 51
+  param %t141 : str   ; line 51
+  %t142 = call @sscanf, 3   ; line 51
+  %t143 = addr @.str20   ; line 52
+  %t144 = addr word   ; line 52
+  param %t143 : str   ; line 52
+  param %t144 : str   ; line 52
+  %t145 = call @printf, 2   ; line 52
+  %t146 = addr line   ; line 54
+  %t147 = addr @.str21   ; line 54
+  %t148 = addr @.str22   ; line 54
+  %t149 = 121   ; line 54
+  %t150 = 3   ; line 54
+  param %t146 : str   ; line 54
+  param %t147 : str   ; line 54
+  param %t148 : str   ; line 54
+  param %t149 : int   ; line 54
+  param %t150 : int   ; line 54
+  %t151 = call @sprintf, 5   ; line 54
+  %t152 = addr @.str23   ; line 55
+  %t153 = addr line   ; line 55
+  %t154 = addr line   ; line 55
+  param %t154 : str   ; line 55
+  %t155 = call @strlen, 1   ; line 55
+  param %t152 : str   ; line 55
+  param %t153 : str   ; line 55
+  param %t155 : int   ; line 55
+  %t156 = call @printf, 3   ; line 55
+  return 0   ; line 56
+end

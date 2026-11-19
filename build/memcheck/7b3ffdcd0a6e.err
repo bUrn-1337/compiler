@@ -1,0 +1,10 @@
+Semantic Error [Line 16, Col 9]: called object 'i' is not a function or function pointer
+Semantic Error [Line 17, Col 9]: called object 'p' is not a function or function pointer
+Semantic Error [Line 18, Col 9]: called object 's' is not a function or function pointer
+Semantic Error [Line 19, Col 9]: function 'fp' expects 2 arguments but 1 was given
+Semantic Error [Line 20, Col 9]: function 'fp' expects 2 arguments but 3 were given
+Semantic Error [Line 21, Col 12]: invalid argument passing: int * to int (an explicit cast is required)
+Semantic Error [Line 22, Col 15]: invalid argument passing: int * to int (an explicit cast is required)
+Semantic Error [Line 23, Col 12]: invalid argument passing: int * to double (there is no conversion between a floating-point type and a pointer)
+
+8 errors found in 'test/errors/e22_funcptr_call.c'; no assembly written.

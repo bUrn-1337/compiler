@@ -1,0 +1,20 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+0: classify=0 steps=100 middle=9
+1: classify=1 steps=1 middle=1
+2: classify=2 steps=2 middle=2
+3: classify=3 steps=3 middle=34
+4: classify=3 steps=-1 middle=34
+zero one two many 
+11 12 10
+21 20 20
+-1 -1 -1
+4 22
+1006 3
+two it is
+fell through
+single
+done

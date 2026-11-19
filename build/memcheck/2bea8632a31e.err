@@ -1,0 +1,3 @@
+Syntax Error [Line 8, Col 32]: expression or statement nested too deeply (limit 10000 levels)
+
+1 error found in 'test/errors/e26_nesting_depth.c'; no assembly written.

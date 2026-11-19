@@ -1,0 +1,12 @@
+; Three-address intermediate representation
+; source: build/malformed/deep_blocks.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+.enddata
+
+func @main ret int retctype "int" nparams 0 frame 0 regs 0 temps 0    ; line 1
+begin
+  return 0   ; line 1
+end

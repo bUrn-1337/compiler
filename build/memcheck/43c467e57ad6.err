@@ -1,0 +1,4 @@
+Lexical Error [Line 40, Col 36]: Unterminated block comment -> '/*'
+Syntax Error [Line 40, Col 48]: unexpected end of file (found ';')
+
+2 errors found in 'build/malformed/cut2_47_valid_tags.c'; no assembly written.

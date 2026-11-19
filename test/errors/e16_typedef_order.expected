@@ -1,0 +1,2 @@
+3:1: Semantic: unknown type name 'Integer' (if this is a typedef name, the typedef must appear before this point and in an enclosing scope)
+15:5: Semantic: unknown type name 'Byte' (if this is a typedef name, the typedef must appear before this point and in an enclosing scope)

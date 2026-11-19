@@ -1,0 +1,4 @@
+Lexical Error [Line 19, Col 31]: Unterminated block comment -> '/*'
+Syntax Error [Line 19, Col 41]: unexpected end of file (found ';')
+
+2 errors found in 'build/malformed/cut3_28_struct_value.c'; no assembly written.

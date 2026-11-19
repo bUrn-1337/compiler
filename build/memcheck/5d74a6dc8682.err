@@ -1,0 +1,3 @@
+Syntax Error [Line 47, Col 10]: unexpected end of file, expecting ';' or ',' (found 'n')
+
+1 error found in 'build/malformed/cut2_48_valid_operators.c'; no assembly written.

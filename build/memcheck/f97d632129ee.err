@@ -1,0 +1,4 @@
+Semantic Error [Line 3, Col 1]: unknown type name 'Integer' (if this is a typedef name, the typedef must appear before this point and in an enclosing scope)
+Semantic Error [Line 15, Col 5]: unknown type name 'Byte' (if this is a typedef name, the typedef must appear before this point and in an enclosing scope)
+
+2 errors found in 'test/errors/e16_typedef_order.c'; no assembly written.

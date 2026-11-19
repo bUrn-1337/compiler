@@ -1,0 +1,14 @@
+Semantic Error [Line 16, Col 7]: assignment to a non-lvalue expression
+Semantic Error [Line 17, Col 6]: operand of '++' is not a modifiable lvalue
+Semantic Error [Line 18, Col 5]: operand of '++' is not a modifiable lvalue
+Semantic Error [Line 19, Col 5]: cannot take the address of a non-lvalue expression
+Semantic Error [Line 20, Col 13]: assignment to a non-lvalue expression
+Semantic Error [Line 21, Col 9]: assignment to a non-lvalue expression
+Semantic Error [Line 22, Col 8]: assignment to a non-lvalue expression
+Semantic Error [Line 23, Col 9]: assignment to a non-lvalue expression
+Semantic Error [Line 24, Col 13]: assignment to a non-lvalue expression
+Semantic Error [Line 25, Col 9]: assignment to an expression of array type int [3]
+Semantic Error [Line 26, Col 13]: assignment to a non-lvalue expression
+Semantic Error [Line 27, Col 15]: assignment to a non-lvalue expression
+
+12 errors found in 'test/errors/e03_non_lvalue.c'; no assembly written.

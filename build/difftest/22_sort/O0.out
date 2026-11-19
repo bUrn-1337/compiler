@@ -1,0 +1,15 @@
+input:      42   7  19   7  -3  88   0  23  61  12
+bubble:     -3   0   7   7  12  19  23  42  61  88
+comparisons=39 swaps=21 sorted=1
+selection:  -3   0   7   7  12  19  23  42  61  88
+insertion:  -3   0   7   7  12  19  23  42  61  88
+quick:      -3   0   7   7  12  19  23  42  61  88
+all agree=1
+find 23 -> 6
+find -3 -> 0
+find 88 -> 9
+find 99 -> -1
+0-24: 6
+25-49: 1
+50-74: 1
+75-99: 1

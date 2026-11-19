@@ -1,0 +1,23 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+add(17, 5) = 22
+sub(17, 5) = 12
+mul(17, 5) = 85
+quo(17, 5) = 3
+max(17, 5) = 17
+fold add = 21
+fold sub = -21
+fold mul = 720
+fold quo = 0
+fold max = 6
+pick: 9 3 18 2
+table[0] is pick('+')
+table[1] is pick('-')
+table[2] is pick('*')
+table[3] is pick('/')
+same: 1 0
+apply: 31.250000 65536.0
+machine: 35 5 231

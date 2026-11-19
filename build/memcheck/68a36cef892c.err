@@ -1,0 +1,3 @@
+Semantic Error: no definition of 'main' was found in this translation unit
+
+1 error found in 'build/malformed/empty.c'; no assembly written.

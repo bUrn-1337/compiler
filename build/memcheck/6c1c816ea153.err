@@ -1,0 +1,3 @@
+Syntax Error [Line 26, Col 36]: unexpected IDENTIFIER (found 'cha')
+
+1 error found in 'build/malformed/cut3_52_valid_funcs.c'; no assembly written.

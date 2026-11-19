@@ -1,0 +1,323 @@
+; Three-address intermediate representation
+; source: test/32_newton.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 49 bytes 115,113,114,116,40,37,46,54,102,41,32,61,32,37,46,49,48,102,32,32,101,114,114,60,49,101,45,57,58,32,37,100,32,32,105,116,101,114,115,60,61,37,100,58,32,37,100,10,0    ; "sqrt(%.6f) = %.10f  err<1e-9: %d  iters<=%d: %d\n"
+str @.str1 len 16 bytes 110,101,103,97,116,105,118,101,58,32,37,46,49,102,10,0    ; "negative: %.1f\n"
+str @.str2 len 24 bytes 115,117,109,32,115,113,114,116,40,49,46,46,49,48,41,32,61,32,37,46,56,102,10,0    ; "sum sqrt(1..10) = %.8f\n"
+global @.fc0 size 8 align 8 type double ctype "double"
+  init.double 0.0    ; 0x0000000000000000
+global @.fc1 size 8 align 8 type double ctype "double"
+  init.double -1.0    ; 0xbff0000000000000
+global @.fc2 size 8 align 8 type double ctype "double"
+  init.double 1.0    ; 0x3ff0000000000000
+global @.fc3 size 8 align 8 type double ctype "double"
+  init.double 2.0    ; 0x4000000000000000
+global @.fc4 size 8 align 8 type double ctype "double"
+  init.double 1.0000000000000001e-15    ; 0x3cd203af9ee75616
+global @.fc5 size 8 align 8 type double ctype "double"
+  init.double 9.0    ; 0x4022000000000000
+global @.fc6 size 8 align 8 type double ctype "double"
+  init.double 0.25    ; 0x3fd0000000000000
+global @.fc7 size 8 align 8 type double ctype "double"
+  init.double 1000000.0    ; 0x412e848000000000
+global @.fc8 size 8 align 8 type double ctype "double"
+  init.double 9.9999999999999995e-07    ; 0x3eb0c6f7a0b5ed8d
+global @.fc9 size 8 align 8 type double ctype "double"
+  init.double 1.0000000000000001e-09    ; 0x3e112e0be826d695
+global @.fc10 size 8 align 8 type double ctype "double"
+  init.double -4.0    ; 0xc010000000000000
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @dabs ret double retctype "double" nparams 1 frame 0 regs 6 temps 5    ; line 4
+  .param 0 v : type double ctype "double" size 8 align 8 reg %v
+  .reg %v : type double ctype "double"
+  .reg %t1 : type double ctype "double"
+  .reg %t3 : type double ctype "double"
+  .reg %t5 : type double ctype "double"
+begin
+  %t2 = addr @.fc0   ; line 4
+  %t3 = load.d %t2   ; line 4
+  %t4 = %v <.d %t3   ; line 4
+  ifFalse %t4 goto .L2   ; line 4
+  %t5 = -.d %v   ; line 4
+  %t1 = %t5   ; line 4
+  goto .L3   ; line 4
+.L2:
+  %t1 = %v   ; line 4
+.L3:
+  return %t1   ; line 4
+end
+
+func @mysqrt ret double retctype "double" nparams 2 frame 0 regs 36 temps 31    ; line 7
+  .param 0 a : type double ctype "double" size 8 align 8 reg %a
+  .param 1 iters : type ptr ctype "int *" size 4 align 4 reg %iters
+  .reg %a : type double ctype "double"
+  .reg %iters : type ptr ctype "int *"
+  .reg %x : type double ctype "double"
+  .reg %n : type int ctype "int"
+  .reg %next : type double ctype "double"
+  .reg %t6 : type double ctype "double"
+  .reg %t9 : type double ctype "double"
+  .reg %t11 : type double ctype "double"
+  .reg %t14 : type double ctype "double"
+  .reg %t15 : type double ctype "double"
+  .reg %t17 : type double ctype "double"
+  .reg %t20 : type double ctype "double"
+  .reg %t22 : type double ctype "double"
+  .reg %t23 : type double ctype "double"
+  .reg %t25 : type double ctype "double"
+  .reg %t26 : type double ctype "double"
+  .reg %t29 : type double ctype "double"
+  .reg %t30 : type double ctype "double"
+  .reg %t32 : type double ctype "double"
+  .reg %t33 : type double ctype "double"
+  .reg %t34 : type double ctype "double"
+begin
+  %n = 0   ; line 9
+  %t5 = addr @.fc0   ; line 10
+  %t6 = load.d %t5   ; line 10
+  %t7 = %a <.d %t6   ; line 10
+  ifFalse %t7 goto .L5   ; line 10
+  store.w %iters, 0   ; line 10
+  %t8 = addr @.fc1   ; line 10
+  %t9 = load.d %t8   ; line 10
+  return %t9   ; line 10
+.L5:
+  %t10 = addr @.fc0   ; line 11
+  %t11 = load.d %t10   ; line 11
+  %t12 = %a ==.d %t11   ; line 11
+  ifFalse %t12 goto .L7   ; line 11
+  store.w %iters, 0   ; line 11
+  %t13 = addr @.fc0   ; line 11
+  %t14 = load.d %t13   ; line 11
+  return %t14   ; line 11
+.L7:
+  %t16 = addr @.fc2   ; line 12
+  %t17 = load.d %t16   ; line 12
+  %t18 = %a >.d %t17   ; line 12
+  ifFalse %t18 goto .L9   ; line 12
+  %t15 = %a   ; line 12
+  goto .L10   ; line 12
+.L9:
+  %t19 = addr @.fc2   ; line 12
+  %t20 = load.d %t19   ; line 12
+  %t15 = %t20   ; line 12
+.L10:
+  %x = %t15   ; line 12
+.L11:
+  %t21 = %n < 60   ; line 13
+  ifFalse %t21 goto .L13   ; line 13
+  %t22 = %a /.d %x   ; line 14
+  %t23 = %x +.d %t22   ; line 14
+  %t24 = addr @.fc3   ; line 14
+  %t25 = load.d %t24   ; line 14
+  %t26 = %t23 /.d %t25   ; line 14
+  %next = %t26   ; line 14
+  %t27 = %n   ; line 15
+  %t28 = %t27 + 1   ; line 15
+  %n = %t28   ; line 15
+  %t29 = %next -.d %x   ; line 16
+  param %t29 : double   ; line 16
+  %t30 = call @dabs, 1   ; line 16
+  %t31 = addr @.fc4   ; line 16
+  %t32 = load.d %t31   ; line 16
+  param %next : double   ; line 16
+  %t33 = call @dabs, 1   ; line 16
+  %t34 = %t32 *.d %t33   ; line 16
+  %t35 = %t30 <=.d %t34   ; line 16
+  ifFalse %t35 goto .L15   ; line 16
+  %x = %next   ; line 16
+  goto .L13   ; line 16
+.L15:
+  %x = %next   ; line 17
+  goto .L11   ; line 17
+.L13:
+  store.w %iters, %n   ; line 19
+  return %x   ; line 20
+end
+
+func @sq ret double retctype "double" nparams 1 frame 0 regs 2 temps 1    ; line 24
+  .param 0 v : type double ctype "double" size 8 align 8 reg %v
+  .reg %v : type double ctype "double"
+  .reg %t1 : type double ctype "double"
+begin
+  %t1 = %v *.d %v   ; line 24
+  return %t1   ; line 24
+end
+
+func @main ret int retctype "int" nparams 0 frame 64 regs 100 temps 98    ; line 26
+  .local vals : type ptr ctype "double [6]" size 48 align 8 slot 0
+  .local i : type int ctype "int" size 4 align 4 slot 48
+  .local it : type int ctype "int" size 4 align 4 slot 52
+  .local it.1 : type int ctype "int" size 4 align 4 slot 56
+  .reg %r : type double ctype "double"
+  .reg %total : type double ctype "double"
+  .reg %t5 : type double ctype "double"
+  .reg %t9 : type double ctype "double"
+  .reg %t13 : type double ctype "double"
+  .reg %t17 : type double ctype "double"
+  .reg %t21 : type double ctype "double"
+  .reg %t25 : type double ctype "double"
+  .reg %t35 : type double ctype "double"
+  .reg %t37 : type double ctype "double"
+  .reg %t44 : type double ctype "double"
+  .reg %t45 : type double ctype "double"
+  .reg %t51 : type double ctype "double"
+  .reg %t52 : type double ctype "double"
+  .reg %t53 : type double ctype "double"
+  .reg %t55 : type double ctype "double"
+  .reg %t61 : type double ctype "double"
+  .reg %t63 : type double ctype "double"
+  .reg %t64 : type double ctype "double"
+  .reg %t65 : type double ctype "double"
+  .reg %t78 : type double ctype "double"
+  .reg %t80 : type double ctype "double"
+  .reg %t83 : type double ctype "double"
+  .reg %t90 : type double ctype "double"
+  .reg %t92 : type double ctype "double"
+  .reg %t93 : type double ctype "double"
+begin
+  %t2 = addr vals   ; line 30
+  %t3 = %t2 + 0   ; line 30
+  %t4 = addr @.fc3   ; line 30
+  %t5 = load.d %t4   ; line 30
+  store.d %t3, %t5   ; line 30
+  %t6 = addr vals   ; line 31
+  %t7 = %t6 + 8   ; line 31
+  %t8 = addr @.fc5   ; line 31
+  %t9 = load.d %t8   ; line 31
+  store.d %t7, %t9   ; line 31
+  %t10 = addr vals   ; line 32
+  %t11 = %t10 + 16   ; line 32
+  %t12 = addr @.fc6   ; line 32
+  %t13 = load.d %t12   ; line 32
+  store.d %t11, %t13   ; line 32
+  %t14 = addr vals   ; line 33
+  %t15 = %t14 + 24   ; line 33
+  %t16 = addr @.fc7   ; line 33
+  %t17 = load.d %t16   ; line 33
+  store.d %t15, %t17   ; line 33
+  %t18 = addr vals   ; line 34
+  %t19 = %t18 + 32   ; line 34
+  %t20 = addr @.fc8   ; line 34
+  %t21 = load.d %t20   ; line 34
+  store.d %t19, %t21   ; line 34
+  %t22 = addr vals   ; line 35
+  %t23 = %t22 + 40   ; line 35
+  %t24 = addr @.fc0   ; line 35
+  %t25 = load.d %t24   ; line 35
+  store.d %t23, %t25   ; line 35
+  %t26 = addr i   ; line 37
+  store.w %t26, 0   ; line 37
+.L16:
+  %t27 = addr i   ; line 37
+  %t28 = load.w %t27   ; line 37
+  %t29 = %t28 < 6   ; line 37
+  ifFalse %t29 goto .L19   ; line 37
+  %t30 = addr vals   ; line 39
+  %t31 = addr i   ; line 39
+  %t32 = load.w %t31   ; line 39
+  %t33 = %t32 * 8   ; line 39
+  %t34 = %t30 + %t33   ; line 39
+  %t35 = load.d %t34   ; line 39
+  %t36 = addr it   ; line 39
+  param %t35 : double   ; line 39
+  param %t36 : ptr   ; line 39
+  %t37 = call @mysqrt, 2   ; line 39
+  %r = %t37   ; line 39
+  %t38 = addr @.str0   ; line 40
+  %t39 = addr vals   ; line 41
+  %t40 = addr i   ; line 41
+  %t41 = load.w %t40   ; line 41
+  %t42 = %t41 * 8   ; line 41
+  %t43 = %t39 + %t42   ; line 41
+  %t44 = load.d %t43   ; line 41
+  param %r : double   ; line 41
+  %t45 = call @sq, 1   ; line 41
+  %t46 = addr vals   ; line 41
+  %t47 = addr i   ; line 41
+  %t48 = load.w %t47   ; line 41
+  %t49 = %t48 * 8   ; line 41
+  %t50 = %t46 + %t49   ; line 41
+  %t51 = load.d %t50   ; line 41
+  %t52 = %t45 -.d %t51   ; line 41
+  param %t52 : double   ; line 41
+  %t53 = call @dabs, 1   ; line 41
+  %t54 = addr @.fc9   ; line 41
+  %t55 = load.d %t54   ; line 41
+  %t56 = addr vals   ; line 41
+  %t57 = addr i   ; line 41
+  %t58 = load.w %t57   ; line 41
+  %t59 = %t58 * 8   ; line 41
+  %t60 = %t56 + %t59   ; line 41
+  %t61 = load.d %t60   ; line 41
+  %t62 = addr @.fc2   ; line 41
+  %t63 = load.d %t62   ; line 41
+  %t64 = %t61 +.d %t63   ; line 41
+  %t65 = %t55 *.d %t64   ; line 41
+  %t66 = %t53 <.d %t65   ; line 41
+  %t67 = 60   ; line 42
+  %t68 = addr it   ; line 42
+  %t69 = load.w %t68   ; line 42
+  %t70 = %t69 <= 60   ; line 42
+  param %t38 : str   ; line 42
+  param %t44 : double   ; line 42
+  param %r : double   ; line 42
+  param %t66 : int   ; line 42
+  param %t67 : int   ; line 42
+  param %t70 : int   ; line 42
+  %t71 = call @printf, 6   ; line 42
+  %t72 = addr i   ; line 37
+  %t73 = load.w %t72   ; line 37
+  %t74 = %t73   ; line 37
+  %t75 = %t74 + 1   ; line 37
+  store.w %t72, %t75   ; line 37
+  goto .L16   ; line 37
+.L19:
+  %t76 = addr @.str1   ; line 44
+  %t77 = addr @.fc10   ; line 44
+  %t78 = load.d %t77   ; line 44
+  %t79 = addr i   ; line 44
+  param %t78 : double   ; line 44
+  param %t79 : ptr   ; line 44
+  %t80 = call @mysqrt, 2   ; line 44
+  param %t76 : str   ; line 44
+  param %t80 : double   ; line 44
+  %t81 = call @printf, 2   ; line 44
+  %t82 = addr @.fc0   ; line 48
+  %t83 = load.d %t82   ; line 48
+  %total = %t83   ; line 48
+  %t84 = addr i   ; line 50
+  store.w %t84, 1   ; line 50
+.L20:
+  %t85 = addr i   ; line 50
+  %t86 = load.w %t85   ; line 50
+  %t87 = %t86 <= 10   ; line 50
+  ifFalse %t87 goto .L23   ; line 50
+  %t88 = addr i   ; line 50
+  %t89 = load.w %t88   ; line 50
+  %t90 = cvt.d.w %t89   ; line 50
+  %t91 = addr it.1   ; line 50
+  param %t90 : double   ; line 50
+  param %t91 : ptr   ; line 50
+  %t92 = call @mysqrt, 2   ; line 50
+  %t93 = %total +.d %t92   ; line 50
+  %total = %t93   ; line 50
+  %t94 = addr i   ; line 50
+  %t95 = load.w %t94   ; line 50
+  %t96 = %t95   ; line 50
+  %t97 = %t96 + 1   ; line 50
+  store.w %t94, %t97   ; line 50
+  goto .L20   ; line 50
+.L23:
+  %t98 = addr @.str2   ; line 51
+  param %t98 : str   ; line 51
+  param %total : double   ; line 51
+  %t99 = call @printf, 2   ; line 51
+  return 0   ; line 53
+end

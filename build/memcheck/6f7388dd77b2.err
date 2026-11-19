@@ -1,0 +1,4 @@
+Lexical Error [Line 42, Col 12]: Unterminated string literal -> '"'
+Syntax Error [Line 42, Col 12]: unexpected end of file (found '(')
+
+2 errors found in 'build/malformed/cut2_45_valid_ternary.c'; no assembly written.

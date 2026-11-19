@@ -1,0 +1,32 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+1: -42 17 31 15 n=5
+2: 255 511 4294967295 18 n=4
+3: 123 45 6789 n=3
+4: 2 n=1
+5: [abc] [defgh] [x] n=3
+6: [x] [ ] n=2
+7: 2024 3 15 50 n=4
+8: 12 -1 n=1
+9: n=-1
+10: n=-1
+11: n=0
+12: 2147483647 -2147483648 n=2
+12u: 4294967295 4294967295 4294967295 50 n=3
+12x: -16 0 g 0 1 n=5
+12a: 2147483647 -2147483648 -12 0
+13: 0.10000000000000001 0.0025000000000000001 n=2
+14: 9007199254740992 1 n=2
+15: inf -inf n=4
+16: 2.2250738585072009e-308 1.7976931348623157e+308 n=2
+17: 3 -0 n=3
+18: 100000 x 7 n=3
+in1: 10 -20 n=2
+in2: word 3.141593 n=2
+in3: Q n=1
+in4: n=0
+in5: oops n=1
+in6: n=-1

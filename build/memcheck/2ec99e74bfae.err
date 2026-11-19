@@ -1,0 +1,4 @@
+Lexical Error [Line 37, Col 5]: Unterminated block comment -> '/*'
+Syntax Error [Line 37, Col 45]: unexpected end of file (found ';')
+
+2 errors found in 'build/malformed/cut2_11_enum_typedef.c'; no assembly written.

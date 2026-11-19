@@ -1,0 +1,392 @@
+; Three-address intermediate representation
+; source: test/64_malloc_stress.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 15 bytes 98,108,111,99,107,115,32,111,107,58,32,37,100,10,0    ; "blocks ok: %d\n"
+str @.str1 len 30 bytes 114,101,97,108,108,111,99,58,32,108,101,110,61,37,100,32,99,97,112,61,37,100,32,111,107,61,37,100,10,0    ; "realloc: len=%d cap=%d ok=%d\n"
+str @.str2 len 15 bytes 115,104,114,117,110,107,58,32,37,100,32,37,100,10,0    ; "shrunk: %d %d\n"
+str @.str3 len 15 bytes 99,97,108,108,111,99,32,115,117,109,32,37,100,10,0    ; "calloc sum %d\n"
+str @.str4 len 13 bytes 108,105,115,116,32,115,117,109,32,37,100,10,0    ; "list sum %d\n"
+str @.str5 len 22 bytes 109,97,108,108,111,99,40,48,41,32,117,115,97,98,108,101,58,32,37,100,10,0    ; "malloc(0) usable: %d\n"
+.enddata
+
+extern @free ret void nparams 1
+extern @malloc ret ptr nparams 1
+extern @printf ret int nparams 1 variadic
+extern @realloc ret ptr nparams 2
+extern @calloc ret ptr nparams 2
+
+func @check_block ret int retctype "int" nparams 3 frame 0 regs 12 temps 8    ; line 8
+  .param 0 p : type str ctype "char *" size 4 align 4 reg %p
+  .param 1 n : type int ctype "int" size 4 align 4 reg %n
+  .param 2 seed : type int ctype "int" size 4 align 4 reg %seed
+  .reg %p : type str ctype "char *"
+  .reg %n : type int ctype "int"
+  .reg %seed : type int ctype "int"
+  .reg %i : type int ctype "int"
+begin
+  %i = 0   ; line 10
+.L1:
+  %t4 = %i < %n   ; line 10
+  ifFalse %t4 goto .L4   ; line 10
+  %t5 = %p + %i   ; line 10
+  %t6 = load.b %t5   ; line 10
+  %t7 = %seed + %i   ; line 10
+  %t8 = sext.b %t7   ; line 10
+  %t9 = %t6 != %t8   ; line 10
+  ifFalse %t9 goto .L6   ; line 10
+  return 0   ; line 10
+.L6:
+  %t10 = %i   ; line 10
+  %t11 = %t10 + 1   ; line 10
+  %i = %t11   ; line 10
+  goto .L1   ; line 10
+.L4:
+  return 1   ; line 11
+end
+
+func @main ret int retctype "int" nparams 0 frame 1600 regs 169 temps 159    ; line 14
+  .local blk : type ptr ctype "char *[200]" size 800 align 4 slot 0
+  .local sz : type ptr ctype "int [200]" size 800 align 4 slot 800
+  .reg %i : type int ctype "int"
+  .reg %round : type int ctype "int"
+  .reg %ok : type int ctype "int"
+  .reg %n : type int ctype "int"
+  .reg %cap : type int ctype "int"
+  .reg %len : type int ctype "int"
+  .reg %arr : type ptr ctype "int *"
+  .reg %z : type ptr ctype "int *"
+  .reg %head : type ptr ctype "struct node *"
+  .reg %q : type ptr ctype "struct node *"
+begin
+  %ok = 1   ; line 22
+  %i = 0   ; line 23
+.L7:
+  %t10 = %i < 200   ; line 23
+  ifFalse %t10 goto .L10   ; line 23
+  %t11 = addr blk   ; line 23
+  %t12 = %i * 4   ; line 23
+  %t13 = %t11 + %t12   ; line 23
+  store.w %t13, 0   ; line 23
+  %t14 = %i   ; line 23
+  %t15 = %t14 + 1   ; line 23
+  %i = %t15   ; line 23
+  goto .L7   ; line 23
+.L10:
+  %round = 0   ; line 24
+.L11:
+  %t16 = %round < 20   ; line 24
+  ifFalse %t16 goto .L14   ; line 24
+  %t17 = %round % 3   ; line 25
+  %i = %t17   ; line 25
+.L15:
+  %t18 = %i < 200   ; line 25
+  ifFalse %t18 goto .L18   ; line 25
+  %t19 = addr blk   ; line 26
+  %t20 = %i * 4   ; line 26
+  %t21 = %t19 + %t20   ; line 26
+  %t22 = load.w %t21   ; line 26
+  ifFalse %t22 goto .L20   ; line 26
+  %t23 = addr blk   ; line 27
+  %t24 = %i * 4   ; line 27
+  %t25 = %t23 + %t24   ; line 27
+  %t26 = load.w %t25   ; line 27
+  %t27 = addr sz   ; line 27
+  %t28 = %i * 4   ; line 27
+  %t29 = %t27 + %t28   ; line 27
+  %t30 = load.w %t29   ; line 27
+  param %t26 : str   ; line 27
+  param %t30 : int   ; line 27
+  param %i : int   ; line 27
+  %t31 = call @check_block, 3   ; line 27
+  if %t31 goto .L22   ; line 27
+  %ok = 0   ; line 27
+.L22:
+  %t32 = addr blk   ; line 28
+  %t33 = %i * 4   ; line 28
+  %t34 = %t32 + %t33   ; line 28
+  %t35 = load.w %t34   ; line 28
+  param %t35 : ptr   ; line 28
+  call @free, 1   ; line 28
+  %t36 = addr blk   ; line 29
+  %t37 = %i * 4   ; line 29
+  %t38 = %t36 + %t37   ; line 29
+  store.w %t38, 0   ; line 29
+  goto .L23   ; line 29
+.L20:
+  %t39 = addr sz   ; line 31
+  %t40 = %i * 4   ; line 31
+  %t41 = %t39 + %t40   ; line 31
+  %t42 = %i * 37   ; line 31
+  %t43 = %round * 11   ; line 31
+  %t44 = %t42 + %t43   ; line 31
+  %t45 = %t44 % 300   ; line 31
+  %t46 = %t45 + 1   ; line 31
+  store.w %t41, %t46   ; line 31
+  %t47 = addr blk   ; line 32
+  %t48 = %i * 4   ; line 32
+  %t49 = %t47 + %t48   ; line 32
+  %t50 = addr sz   ; line 32
+  %t51 = %i * 4   ; line 32
+  %t52 = %t50 + %t51   ; line 32
+  %t53 = load.w %t52   ; line 32
+  param %t53 : int   ; line 32
+  %t54 = call @malloc, 1   ; line 32
+  store.w %t49, %t54   ; line 32
+  %n = 0   ; line 33
+.L24:
+  %t55 = addr sz   ; line 33
+  %t56 = %i * 4   ; line 33
+  %t57 = %t55 + %t56   ; line 33
+  %t58 = load.w %t57   ; line 33
+  %t59 = %n < %t58   ; line 33
+  ifFalse %t59 goto .L27   ; line 33
+  %t60 = addr blk   ; line 33
+  %t61 = %i * 4   ; line 33
+  %t62 = %t60 + %t61   ; line 33
+  %t63 = load.w %t62   ; line 33
+  %t64 = %t63 + %n   ; line 33
+  %t65 = %i + %n   ; line 33
+  %t66 = sext.b %t65   ; line 33
+  store.b %t64, %t66   ; line 33
+  %t67 = sext.b %t66   ; line 33
+  %t68 = %n   ; line 33
+  %t69 = %t68 + 1   ; line 33
+  %n = %t69   ; line 33
+  goto .L24   ; line 33
+.L27:
+.L23:
+  %t70 = %i + 3   ; line 25
+  %i = %t70   ; line 25
+  goto .L15   ; line 25
+.L18:
+  %t71 = %round   ; line 24
+  %t72 = %t71 + 1   ; line 24
+  %round = %t72   ; line 24
+  goto .L11   ; line 24
+.L14:
+  %i = 0   ; line 37
+.L28:
+  %t73 = %i < 200   ; line 37
+  ifFalse %t73 goto .L31   ; line 37
+  %t74 = addr blk   ; line 38
+  %t75 = %i * 4   ; line 38
+  %t76 = %t74 + %t75   ; line 38
+  %t77 = load.w %t76   ; line 38
+  ifFalse %t77 goto .L33   ; line 38
+  %t78 = addr blk   ; line 39
+  %t79 = %i * 4   ; line 39
+  %t80 = %t78 + %t79   ; line 39
+  %t81 = load.w %t80   ; line 39
+  %t82 = addr sz   ; line 39
+  %t83 = %i * 4   ; line 39
+  %t84 = %t82 + %t83   ; line 39
+  %t85 = load.w %t84   ; line 39
+  param %t81 : str   ; line 39
+  param %t85 : int   ; line 39
+  param %i : int   ; line 39
+  %t86 = call @check_block, 3   ; line 39
+  if %t86 goto .L35   ; line 39
+  %ok = 0   ; line 39
+.L35:
+  %t87 = addr blk   ; line 40
+  %t88 = %i * 4   ; line 40
+  %t89 = %t87 + %t88   ; line 40
+  %t90 = load.w %t89   ; line 40
+  param %t90 : ptr   ; line 40
+  call @free, 1   ; line 40
+.L33:
+  %t91 = %i   ; line 37
+  %t92 = %t91 + 1   ; line 37
+  %i = %t92   ; line 37
+  goto .L28   ; line 37
+.L31:
+  %t93 = addr @.str0   ; line 42
+  param %t93 : str   ; line 42
+  param %ok : int   ; line 42
+  %t94 = call @printf, 2   ; line 42
+  %cap = 1   ; line 44
+  %len = 0   ; line 45
+  %t95 = %cap * 4   ; line 46
+  param %t95 : int   ; line 46
+  %t96 = call @malloc, 1   ; line 46
+  %arr = %t96   ; line 46
+  %i = 0   ; line 47
+.L36:
+  %t97 = %i < 5000   ; line 47
+  ifFalse %t97 goto .L39   ; line 47
+  %t98 = %len == %cap   ; line 48
+  ifFalse %t98 goto .L41   ; line 48
+  %t99 = %cap * 2   ; line 49
+  %cap = %t99   ; line 49
+  %t100 = %cap * 4   ; line 50
+  param %arr : ptr   ; line 50
+  param %t100 : int   ; line 50
+  %t101 = call @realloc, 2   ; line 50
+  %arr = %t101   ; line 50
+.L41:
+  %t102 = %len   ; line 52
+  %t103 = %t102 + 1   ; line 52
+  %len = %t103   ; line 52
+  %t104 = %t102 * 4   ; line 52
+  %t105 = %arr + %t104   ; line 52
+  %t106 = %i * %i   ; line 52
+  store.w %t105, %t106   ; line 52
+  %t107 = %i   ; line 47
+  %t108 = %t107 + 1   ; line 47
+  %i = %t108   ; line 47
+  goto .L36   ; line 47
+.L39:
+  %ok = 1   ; line 54
+  %i = 0   ; line 55
+.L42:
+  %t109 = %i < %len   ; line 55
+  ifFalse %t109 goto .L45   ; line 55
+  %t110 = %i * 4   ; line 55
+  %t111 = %arr + %t110   ; line 55
+  %t112 = load.w %t111   ; line 55
+  %t113 = %i * %i   ; line 55
+  %t114 = %t112 != %t113   ; line 55
+  ifFalse %t114 goto .L47   ; line 55
+  %ok = 0   ; line 55
+.L47:
+  %t115 = %i   ; line 55
+  %t116 = %t115 + 1   ; line 55
+  %i = %t116   ; line 55
+  goto .L42   ; line 55
+.L45:
+  %t117 = addr @.str1   ; line 56
+  param %t117 : str   ; line 56
+  param %len : int   ; line 56
+  param %cap : int   ; line 56
+  param %ok : int   ; line 56
+  %t118 = call @printf, 4   ; line 56
+  %t119 = 40   ; line 57
+  param %arr : ptr   ; line 57
+  param %t119 : int   ; line 57
+  %t120 = call @realloc, 2   ; line 57
+  %arr = %t120   ; line 57
+  %t121 = addr @.str2   ; line 58
+  %t122 = %arr + 12   ; line 58
+  %t123 = load.w %t122   ; line 58
+  %t124 = %arr + 36   ; line 58
+  %t125 = load.w %t124   ; line 58
+  param %t121 : str   ; line 58
+  param %t123 : int   ; line 58
+  param %t125 : int   ; line 58
+  %t126 = call @printf, 3   ; line 58
+  param %arr : ptr   ; line 59
+  call @free, 1   ; line 59
+  %round = 0   ; line 61
+.L48:
+  %t127 = %round < 3   ; line 61
+  ifFalse %t127 goto .L51   ; line 61
+  %t128 = 400   ; line 62
+  param %t128 : int   ; line 62
+  %t129 = call @malloc, 1   ; line 62
+  %z = %t129   ; line 62
+  %i = 0   ; line 63
+.L52:
+  %t130 = %i < 100   ; line 63
+  ifFalse %t130 goto .L55   ; line 63
+  %t131 = %i * 4   ; line 63
+  %t132 = %z + %t131   ; line 63
+  store.w %t132, -1   ; line 63
+  %t133 = %i   ; line 63
+  %t134 = %t133 + 1   ; line 63
+  %i = %t134   ; line 63
+  goto .L52   ; line 63
+.L55:
+  param %z : ptr   ; line 64
+  call @free, 1   ; line 64
+  %t135 = 100   ; line 65
+  %t136 = 4   ; line 65
+  param %t135 : int   ; line 65
+  param %t136 : int   ; line 65
+  %t137 = call @calloc, 2   ; line 65
+  %z = %t137   ; line 65
+  %n = 0   ; line 66
+  %i = 0   ; line 67
+.L56:
+  %t138 = %i < 100   ; line 67
+  ifFalse %t138 goto .L59   ; line 67
+  %t139 = %i * 4   ; line 67
+  %t140 = %z + %t139   ; line 67
+  %t141 = load.w %t140   ; line 67
+  %t142 = %n + %t141   ; line 67
+  %n = %t142   ; line 67
+  %t143 = %i   ; line 67
+  %t144 = %t143 + 1   ; line 67
+  %i = %t144   ; line 67
+  goto .L56   ; line 67
+.L59:
+  %t145 = addr @.str3   ; line 68
+  param %t145 : str   ; line 68
+  param %n : int   ; line 68
+  %t146 = call @printf, 2   ; line 68
+  param %z : ptr   ; line 69
+  call @free, 1   ; line 69
+  %t147 = %round   ; line 61
+  %t148 = %t147 + 1   ; line 61
+  %round = %t148   ; line 61
+  goto .L48   ; line 61
+.L51:
+  %head = 0   ; line 72
+  %i = 0   ; line 73
+.L60:
+  %t149 = %i < 1000   ; line 73
+  ifFalse %t149 goto .L63   ; line 73
+  %t150 = 8   ; line 74
+  param %t150 : int   ; line 74
+  %t151 = call @malloc, 1   ; line 74
+  %q = %t151   ; line 74
+  store.w %q, %i   ; line 75
+  %t152 = %q + 4   ; line 76
+  store.w %t152, %head   ; line 76
+  %head = %q   ; line 77
+  %t153 = %i   ; line 73
+  %t154 = %t153 + 1   ; line 73
+  %i = %t154   ; line 73
+  goto .L60   ; line 73
+.L63:
+  %n = 0   ; line 79
+  %q = %head   ; line 80
+.L64:
+  ifFalse %q goto .L67   ; line 80
+  %t155 = load.w %q   ; line 80
+  %t156 = %n + %t155   ; line 80
+  %n = %t156   ; line 80
+  %t157 = %q + 4   ; line 80
+  %t158 = load.w %t157   ; line 80
+  %q = %t158   ; line 80
+  goto .L64   ; line 80
+.L67:
+  %t159 = addr @.str4   ; line 81
+  param %t159 : str   ; line 81
+  param %n : int   ; line 81
+  %t160 = call @printf, 2   ; line 81
+.L68:
+  ifFalse %head goto .L70   ; line 82
+  %t161 = %head + 4   ; line 83
+  %t162 = load.w %t161   ; line 83
+  %q = %t162   ; line 83
+  param %head : ptr   ; line 84
+  call @free, 1   ; line 84
+  %head = %q   ; line 85
+  goto .L68   ; line 85
+.L70:
+  %t163 = 0   ; line 87
+  param %t163 : ptr   ; line 87
+  call @free, 1   ; line 87
+  %t164 = addr @.str5   ; line 88
+  %t165 = 0   ; line 88
+  param %t165 : int   ; line 88
+  %t166 = call @malloc, 1   ; line 88
+  %t167 = %t166 != 0   ; line 88
+  param %t164 : str   ; line 88
+  param %t167 : int   ; line 88
+  %t168 = call @printf, 2   ; line 88
+  return 0   ; line 89
+end

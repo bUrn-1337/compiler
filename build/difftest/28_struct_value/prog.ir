@@ -1,0 +1,450 @@
+; Three-address intermediate representation
+; source: test/28_struct_value.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 25 bytes 97,61,37,100,44,37,100,32,98,61,37,100,44,37,100,32,99,61,37,100,44,37,100,10,0    ; "a=%d,%d b=%d,%d c=%d,%d\n"
+str @.str1 len 14 bytes 115,101,108,102,32,97,61,37,100,44,37,100,10,0    ; "self a=%d,%d\n"
+str @.str2 len 9 bytes 98,61,37,100,44,37,100,10,0    ; "b=%d,%d\n"
+str @.str3 len 9 bytes 99,61,37,100,44,37,100,10,0    ; "c=%d,%d\n"
+str @.str4 len 24 bytes 115,117,109,73,110,110,101,114,61,37,100,32,105,110,46,97,91,48,93,61,37,100,10,0    ; "sumInner=%d in.a[0]=%d\n"
+str @.str5 len 55 bytes 111,46,116,97,105,108,61,37,100,32,111,50,46,116,97,105,108,61,37,100,32,111,46,112,46,120,61,37,100,32,111,50,46,112,46,120,61,37,100,32,111,50,46,105,110,46,97,91,49,93,61,37,100,10,0    ; "o.tail=%d o2.tail=%d o.p.x=%d o2.p.x=%d o2.in.a[1]=%d\n"
+str @.str6 len 14 bytes 100,105,114,101,99,116,61,37,100,44,37,100,10,0    ; "direct=%d,%d\n"
+str @.str7 len 18 bytes 118,46,98,61,37,100,44,37,100,32,118,46,105,61,37,100,10,0    ; "v.b=%d,%d v.i=%d\n"
+str @.str8 len 15 bytes 97,114,114,91,37,100,93,61,37,100,44,37,100,10,0    ; "arr[%d]=%d,%d\n"
+str @.str9 len 17 bytes 100,61,37,100,44,37,100,32,101,61,37,100,44,37,100,10,0    ; "d=%d,%d e=%d,%d\n"
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @mk ret agg retctype "struct Point" retsize 8 retalign 4 sret nparams 3 frame 8 regs 7 temps 4    ; line 10
+  .param 0 sret.ptr : type ptr ctype "struct Point *" size 4 align 4 reg %sret.ptr sret
+  .param 1 x : type int ctype "int" size 4 align 4 reg %x
+  .param 2 y : type int ctype "int" size 4 align 4 reg %y
+  .local p : type agg ctype "struct Point" size 8 align 4 slot 0
+  .reg %sret.ptr : type ptr ctype "struct Point *"
+  .reg %x : type int ctype "int"
+  .reg %y : type int ctype "int"
+begin
+  %t3 = addr p   ; line 10
+  store.w %t3, %x   ; line 10
+  %t4 = addr p   ; line 10
+  %t5 = %t4 + 4   ; line 10
+  store.w %t5, %y   ; line 10
+  %t6 = addr p   ; line 10
+  blkcopy %sret.ptr, %t6, size 8 align 4   ; line 10
+  return %sret.ptr   ; line 10
+end
+
+func @addp ret agg retctype "struct Point" retsize 8 retalign 4 sret nparams 3 frame 16 regs 19 temps 16    ; line 11
+  .param 0 sret.ptr : type ptr ctype "struct Point *" size 4 align 4 reg %sret.ptr sret
+  .param 1 a : type agg ctype "struct Point" size 8 align 4 byval slot 0 from reg %a.ptr
+  .param 2 b : type agg ctype "struct Point" size 8 align 4 byval slot 8 from reg %b.ptr
+  .local a : type agg ctype "struct Point" size 8 align 4 slot 0
+  .local b : type agg ctype "struct Point" size 8 align 4 slot 8
+  .reg %sret.ptr : type ptr ctype "struct Point *"
+  .reg %a.ptr : type ptr ctype "struct Point *"
+  .reg %b.ptr : type ptr ctype "struct Point *"
+begin
+  %t3 = addr a   ; line 12
+  %t4 = addr a   ; line 12
+  %t5 = load.w %t4   ; line 12
+  %t6 = addr b   ; line 12
+  %t7 = load.w %t6   ; line 12
+  %t8 = %t5 + %t7   ; line 12
+  store.w %t3, %t8   ; line 12
+  %t9 = addr a   ; line 13
+  %t10 = %t9 + 4   ; line 13
+  %t11 = addr a   ; line 13
+  %t12 = %t11 + 4   ; line 13
+  %t13 = load.w %t12   ; line 13
+  %t14 = addr b   ; line 13
+  %t15 = %t14 + 4   ; line 13
+  %t16 = load.w %t15   ; line 13
+  %t17 = %t13 + %t16   ; line 13
+  store.w %t10, %t17   ; line 13
+  %t18 = addr a   ; line 14
+  blkcopy %sret.ptr, %t18, size 8 align 4   ; line 14
+  return %sret.ptr   ; line 14
+end
+
+func @sumInner ret int retctype "int" nparams 1 frame 16 regs 17 temps 14    ; line 16
+  .param 0 q : type agg ctype "struct Inner" size 16 align 4 byval slot 0 from reg %q.ptr
+  .local q : type agg ctype "struct Inner" size 16 align 4 slot 0
+  .reg %q.ptr : type ptr ctype "struct Inner *"
+  .reg %i : type int ctype "int"
+  .reg %s : type int ctype "int"
+begin
+  %s = 0   ; line 17
+  %i = 0   ; line 18
+.L1:
+  %t3 = %i < 3   ; line 18
+  ifFalse %t3 goto .L4   ; line 18
+  %t4 = addr q   ; line 18
+  %t5 = %i * 4   ; line 18
+  %t6 = %t4 + %t5   ; line 18
+  %t7 = load.w %t6   ; line 18
+  %t8 = %s + %t7   ; line 18
+  %s = %t8   ; line 18
+  %t9 = %i   ; line 18
+  %t10 = %t9 + 1   ; line 18
+  %i = %t10   ; line 18
+  goto .L1   ; line 18
+.L4:
+  %t11 = addr q   ; line 19
+  %t12 = %t11 + 0   ; line 19
+  store.w %t12, 999   ; line 19
+  %t13 = addr q   ; line 20
+  %t14 = %t13 + 12   ; line 20
+  %t15 = load.b %t14   ; line 20
+  %t16 = %s + %t15   ; line 20
+  return %t16   ; line 20
+end
+
+func @bump ret agg retctype "struct Outer" retsize 28 retalign 4 sret nparams 2 frame 32 regs 13 temps 11    ; line 22
+  .param 0 sret.ptr : type ptr ctype "struct Outer *" size 4 align 4 reg %sret.ptr sret
+  .param 1 o : type agg ctype "struct Outer" size 28 align 4 byval slot 0 from reg %o.ptr
+  .local o : type agg ctype "struct Outer" size 28 align 4 slot 0
+  .reg %sret.ptr : type ptr ctype "struct Outer *"
+  .reg %o.ptr : type ptr ctype "struct Outer *"
+begin
+  %t2 = addr o   ; line 22
+  %t3 = %t2 + 24   ; line 22
+  %t4 = addr o   ; line 22
+  %t5 = %t4 + 24   ; line 22
+  %t6 = load.w %t5   ; line 22
+  %t7 = %t6 + 1   ; line 22
+  store.w %t3, %t7   ; line 22
+  %t8 = addr o   ; line 22
+  %t9 = addr o   ; line 22
+  %t10 = load.w %t9   ; line 22
+  %t11 = %t10 + 10   ; line 22
+  store.w %t8, %t11   ; line 22
+  %t12 = addr o   ; line 22
+  blkcopy %sret.ptr, %t12, size 28 align 4   ; line 22
+  return %sret.ptr   ; line 22
+end
+
+func @main ret int retctype "int" nparams 0 frame 256 regs 186 temps 184    ; line 24
+  .local a : type agg ctype "struct Point" size 8 align 4 slot 0
+  .local b : type agg ctype "struct Point" size 8 align 4 slot 8
+  .local c : type agg ctype "struct Point" size 8 align 4 slot 16
+  .local o : type agg ctype "struct Outer" size 28 align 4 slot 24
+  .local o2 : type agg ctype "struct Outer" size 28 align 4 slot 52
+  .local in : type agg ctype "struct Inner" size 16 align 4 slot 80
+  .local u : type agg ctype "union U" size 4 align 4 slot 96
+  .local v : type agg ctype "union U" size 4 align 4 slot 100
+  .local arr : type ptr ctype "struct Point [3]" size 24 align 4 slot 104
+  .local d : type agg ctype "struct Point" size 8 align 4 slot 128
+  .local e : type agg ctype "struct Point" size 8 align 4 slot 136
+  .local .ret0 : type agg ctype "struct Point" size 8 align 4 slot 144
+  .local .ret1 : type agg ctype "struct Point" size 8 align 4 slot 152
+  .local .ret2 : type agg ctype "struct Point" size 8 align 4 slot 160
+  .local .ret3 : type agg ctype "struct Point" size 8 align 4 slot 168
+  .local .ret4 : type agg ctype "struct Outer" size 28 align 4 slot 176
+  .local .ret5 : type agg ctype "struct Point" size 8 align 4 slot 204
+  .local .ret6 : type agg ctype "struct Point" size 8 align 4 slot 212
+  .local .ret7 : type agg ctype "struct Point" size 8 align 4 slot 220
+  .local .ret8 : type agg ctype "struct Point" size 8 align 4 slot 228
+  .local .ret9 : type agg ctype "struct Point" size 8 align 4 slot 236
+  .local .ret10 : type agg ctype "struct Point" size 8 align 4 slot 244
+  .reg %pp : type ptr ctype "struct Point *"
+  .reg %i : type int ctype "int"
+begin
+  %t2 = addr a   ; line 33
+  %t3 = addr .ret0   ; line 33
+  %t4 = 1   ; line 33
+  %t5 = 2   ; line 33
+  param %t3 : ptr size 8 align 4 sret   ; line 33
+  param %t4 : int   ; line 33
+  param %t5 : int   ; line 33
+  %t6 = call @mk, 3   ; line 33
+  blkcopy %t2, %t6, size 8 align 4   ; line 33
+  %t7 = addr b   ; line 34
+  %t8 = addr .ret1   ; line 34
+  %t9 = 30   ; line 34
+  %t10 = 40   ; line 34
+  param %t8 : ptr size 8 align 4 sret   ; line 34
+  param %t9 : int   ; line 34
+  param %t10 : int   ; line 34
+  %t11 = call @mk, 3   ; line 34
+  blkcopy %t7, %t11, size 8 align 4   ; line 34
+  %t12 = addr c   ; line 35
+  %t13 = addr .ret2   ; line 35
+  %t14 = addr a   ; line 35
+  %t15 = addr b   ; line 35
+  param %t13 : ptr size 8 align 4 sret   ; line 35
+  param %t14 : agg size 8 align 4   ; line 35
+  param %t15 : agg size 8 align 4   ; line 35
+  %t16 = call @addp, 3   ; line 35
+  blkcopy %t12, %t16, size 8 align 4   ; line 35
+  %t17 = addr @.str0   ; line 36
+  %t18 = addr a   ; line 36
+  %t19 = load.w %t18   ; line 36
+  %t20 = addr a   ; line 36
+  %t21 = %t20 + 4   ; line 36
+  %t22 = load.w %t21   ; line 36
+  %t23 = addr b   ; line 36
+  %t24 = load.w %t23   ; line 36
+  %t25 = addr b   ; line 36
+  %t26 = %t25 + 4   ; line 36
+  %t27 = load.w %t26   ; line 36
+  %t28 = addr c   ; line 36
+  %t29 = load.w %t28   ; line 36
+  %t30 = addr c   ; line 36
+  %t31 = %t30 + 4   ; line 36
+  %t32 = load.w %t31   ; line 36
+  param %t17 : str   ; line 36
+  param %t19 : int   ; line 36
+  param %t22 : int   ; line 36
+  param %t24 : int   ; line 36
+  param %t27 : int   ; line 36
+  param %t29 : int   ; line 36
+  param %t32 : int   ; line 36
+  %t33 = call @printf, 7   ; line 36
+  %t34 = addr a   ; line 38
+  %t35 = addr a   ; line 38
+  blkcopy %t34, %t35, size 8 align 4   ; line 38
+  %t36 = addr @.str1   ; line 39
+  %t37 = addr a   ; line 39
+  %t38 = load.w %t37   ; line 39
+  %t39 = addr a   ; line 39
+  %t40 = %t39 + 4   ; line 39
+  %t41 = load.w %t40   ; line 39
+  param %t36 : str   ; line 39
+  param %t38 : int   ; line 39
+  param %t41 : int   ; line 39
+  %t42 = call @printf, 3   ; line 39
+  %t43 = addr b   ; line 41
+  %pp = %t43   ; line 41
+  %t44 = addr a   ; line 42
+  blkcopy %pp, %t44, size 8 align 4   ; line 42
+  %t45 = addr @.str2   ; line 43
+  %t46 = addr b   ; line 43
+  %t47 = load.w %t46   ; line 43
+  %t48 = addr b   ; line 43
+  %t49 = %t48 + 4   ; line 43
+  %t50 = load.w %t49   ; line 43
+  param %t45 : str   ; line 43
+  param %t47 : int   ; line 43
+  param %t50 : int   ; line 43
+  %t51 = call @printf, 3   ; line 43
+  %t52 = addr c   ; line 44
+  blkcopy %t52, %pp, size 8 align 4   ; line 44
+  %t53 = addr @.str3   ; line 45
+  %t54 = addr c   ; line 45
+  %t55 = load.w %t54   ; line 45
+  %t56 = addr c   ; line 45
+  %t57 = %t56 + 4   ; line 45
+  %t58 = load.w %t57   ; line 45
+  param %t53 : str   ; line 45
+  param %t55 : int   ; line 45
+  param %t58 : int   ; line 45
+  %t59 = call @printf, 3   ; line 45
+  %t60 = addr in   ; line 47
+  %t61 = %t60 + 0   ; line 47
+  store.w %t61, 5   ; line 47
+  %t62 = addr in   ; line 47
+  %t63 = %t62 + 4   ; line 47
+  store.w %t63, 6   ; line 47
+  %t64 = addr in   ; line 47
+  %t65 = %t64 + 8   ; line 47
+  store.w %t65, 7   ; line 47
+  %t66 = addr in   ; line 47
+  %t67 = %t66 + 12   ; line 47
+  store.b %t67, 65   ; line 47
+  %t68 = addr @.str4   ; line 48
+  %t69 = addr in   ; line 48
+  param %t69 : agg size 16 align 4   ; line 48
+  %t70 = call @sumInner, 1   ; line 48
+  %t71 = addr in   ; line 48
+  %t72 = %t71 + 0   ; line 48
+  %t73 = load.w %t72   ; line 48
+  param %t68 : str   ; line 48
+  param %t70 : int   ; line 48
+  param %t73 : int   ; line 48
+  %t74 = call @printf, 3   ; line 48
+  %t75 = addr o   ; line 50
+  %t76 = addr .ret3   ; line 50
+  %t77 = 3   ; line 50
+  %t78 = 4   ; line 50
+  param %t76 : ptr size 8 align 4 sret   ; line 50
+  param %t77 : int   ; line 50
+  param %t78 : int   ; line 50
+  %t79 = call @mk, 3   ; line 50
+  blkcopy %t75, %t79, size 8 align 4   ; line 50
+  %t80 = addr o   ; line 51
+  %t81 = %t80 + 8   ; line 51
+  %t82 = addr in   ; line 51
+  blkcopy %t81, %t82, size 16 align 4   ; line 51
+  %t83 = addr o   ; line 52
+  %t84 = %t83 + 24   ; line 52
+  store.w %t84, 100   ; line 52
+  %t85 = addr o2   ; line 53
+  %t86 = addr .ret4   ; line 53
+  %t87 = addr o   ; line 53
+  param %t86 : ptr size 28 align 4 sret   ; line 53
+  param %t87 : agg size 28 align 4   ; line 53
+  %t88 = call @bump, 2   ; line 53
+  blkcopy %t85, %t88, size 28 align 4   ; line 53
+  %t89 = addr @.str5   ; line 54
+  %t90 = addr o   ; line 55
+  %t91 = %t90 + 24   ; line 55
+  %t92 = load.w %t91   ; line 55
+  %t93 = addr o2   ; line 55
+  %t94 = %t93 + 24   ; line 55
+  %t95 = load.w %t94   ; line 55
+  %t96 = addr o   ; line 55
+  %t97 = load.w %t96   ; line 55
+  %t98 = addr o2   ; line 55
+  %t99 = load.w %t98   ; line 55
+  %t100 = addr o2   ; line 55
+  %t101 = %t100 + 8   ; line 55
+  %t102 = %t101 + 4   ; line 55
+  %t103 = load.w %t102   ; line 55
+  param %t89 : str   ; line 55
+  param %t92 : int   ; line 55
+  param %t95 : int   ; line 55
+  param %t97 : int   ; line 55
+  param %t99 : int   ; line 55
+  param %t103 : int   ; line 55
+  %t104 = call @printf, 6   ; line 55
+  %t105 = addr @.str6   ; line 57
+  %t106 = addr .ret5   ; line 57
+  %t107 = 7   ; line 57
+  %t108 = 8   ; line 57
+  param %t106 : ptr size 8 align 4 sret   ; line 57
+  param %t107 : int   ; line 57
+  param %t108 : int   ; line 57
+  %t109 = call @mk, 3   ; line 57
+  %t110 = load.w %t109   ; line 57
+  %t111 = addr .ret6   ; line 57
+  %t112 = addr .ret7   ; line 57
+  %t113 = 1   ; line 57
+  %t114 = 1   ; line 57
+  param %t112 : ptr size 8 align 4 sret   ; line 57
+  param %t113 : int   ; line 57
+  param %t114 : int   ; line 57
+  %t115 = call @mk, 3   ; line 57
+  %t116 = addr .ret8   ; line 57
+  %t117 = 2   ; line 57
+  %t118 = 2   ; line 57
+  param %t116 : ptr size 8 align 4 sret   ; line 57
+  param %t117 : int   ; line 57
+  param %t118 : int   ; line 57
+  %t119 = call @mk, 3   ; line 57
+  param %t111 : ptr size 8 align 4 sret   ; line 57
+  param %t115 : agg size 8 align 4   ; line 57
+  param %t119 : agg size 8 align 4   ; line 57
+  %t120 = call @addp, 3   ; line 57
+  %t121 = %t120 + 4   ; line 57
+  %t122 = load.w %t121   ; line 57
+  param %t105 : str   ; line 57
+  param %t110 : int   ; line 57
+  param %t122 : int   ; line 57
+  %t123 = call @printf, 3   ; line 57
+  %t124 = addr u   ; line 59
+  store.w %t124, 0   ; line 59
+  %t125 = addr u   ; line 60
+  %t126 = %t125 + 0   ; line 60
+  store.b %t126, 1   ; line 60
+  %t127 = addr u   ; line 60
+  %t128 = %t127 + 1   ; line 60
+  store.b %t128, 2   ; line 60
+  %t129 = addr v   ; line 61
+  %t130 = addr u   ; line 61
+  blkcopy %t129, %t130, size 4 align 4   ; line 61
+  %t131 = addr @.str7   ; line 62
+  %t132 = addr v   ; line 62
+  %t133 = %t132 + 0   ; line 62
+  %t134 = load.b %t133   ; line 62
+  %t135 = addr v   ; line 62
+  %t136 = %t135 + 1   ; line 62
+  %t137 = load.b %t136   ; line 62
+  %t138 = addr v   ; line 62
+  %t139 = load.w %t138   ; line 62
+  %t140 = addr u   ; line 62
+  %t141 = load.w %t140   ; line 62
+  %t142 = %t139 == %t141   ; line 62
+  param %t131 : str   ; line 62
+  param %t134 : char   ; line 62
+  param %t137 : char   ; line 62
+  param %t142 : int   ; line 62
+  %t143 = call @printf, 4   ; line 62
+  %i = 0   ; line 64
+.L5:
+  %t144 = %i < 3   ; line 64
+  ifFalse %t144 goto .L8   ; line 64
+  %t145 = addr arr   ; line 64
+  %t146 = %i * 8   ; line 64
+  %t147 = %t145 + %t146   ; line 64
+  %t148 = addr .ret9   ; line 64
+  %t149 = %i * %i   ; line 64
+  param %t148 : ptr size 8 align 4 sret   ; line 64
+  param %i : int   ; line 64
+  param %t149 : int   ; line 64
+  %t150 = call @mk, 3   ; line 64
+  blkcopy %t147, %t150, size 8 align 4   ; line 64
+  %t151 = %i   ; line 64
+  %t152 = %t151 + 1   ; line 64
+  %i = %t152   ; line 64
+  goto .L5   ; line 64
+.L8:
+  %i = 0   ; line 65
+.L9:
+  %t153 = %i < 3   ; line 65
+  ifFalse %t153 goto .L12   ; line 65
+  %t154 = addr @.str8   ; line 65
+  %t155 = addr arr   ; line 65
+  %t156 = %i * 8   ; line 65
+  %t157 = %t155 + %t156   ; line 65
+  %t158 = load.w %t157   ; line 65
+  %t159 = addr arr   ; line 65
+  %t160 = %i * 8   ; line 65
+  %t161 = %t159 + %t160   ; line 65
+  %t162 = %t161 + 4   ; line 65
+  %t163 = load.w %t162   ; line 65
+  param %t154 : str   ; line 65
+  param %i : int   ; line 65
+  param %t158 : int   ; line 65
+  param %t163 : int   ; line 65
+  %t164 = call @printf, 4   ; line 65
+  %t165 = %i   ; line 65
+  %t166 = %t165 + 1   ; line 65
+  %i = %t166   ; line 65
+  goto .L9   ; line 65
+.L12:
+  %t167 = addr d   ; line 67
+  memzero %t167, 8   ; line 67
+  %t168 = addr c   ; line 67
+  blkcopy %t167, %t168, size 8 align 4   ; line 67
+  %t169 = addr e   ; line 68
+  memzero %t169, 8   ; line 68
+  %t170 = addr .ret10   ; line 68
+  %t171 = 9   ; line 68
+  %t172 = 9   ; line 68
+  param %t170 : ptr size 8 align 4 sret   ; line 68
+  param %t171 : int   ; line 68
+  param %t172 : int   ; line 68
+  %t173 = call @mk, 3   ; line 68
+  blkcopy %t169, %t173, size 8 align 4   ; line 68
+  %t174 = addr @.str9   ; line 69
+  %t175 = addr d   ; line 69
+  %t176 = load.w %t175   ; line 69
+  %t177 = addr d   ; line 69
+  %t178 = %t177 + 4   ; line 69
+  %t179 = load.w %t178   ; line 69
+  %t180 = addr e   ; line 69
+  %t181 = load.w %t180   ; line 69
+  %t182 = addr e   ; line 69
+  %t183 = %t182 + 4   ; line 69
+  %t184 = load.w %t183   ; line 69
+  param %t174 : str   ; line 69
+  param %t176 : int   ; line 69
+  param %t179 : int   ; line 69
+  param %t181 : int   ; line 69
+  param %t184 : int   ; line 69
+  %t185 = call @printf, 5   ; line 69
+  return 0   ; line 70
+end

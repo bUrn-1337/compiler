@@ -1,0 +1,4 @@
+Lexical Error [Line 1, Col 17]: Unterminated block comment -> '/*'
+Syntax Error [Line 2, Col 12]: unexpected end of file (found '{')
+
+2 errors found in 'build/malformed/unterm_comment.c'; no assembly written.

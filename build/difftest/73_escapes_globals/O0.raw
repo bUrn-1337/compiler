@@ -1,0 +1,20 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+esc: 7 8 12 10 13 9 11 92 39 34 63 0
+oct: 65 66 67 0 48 7 127 -1 0
+hex: 65 122 48 0 -1 127 0
+10 0 92 65 65 -1 39
+# not a comment: .asciiz "x" $t0 main: syscall|47
+tab	here|quote"in|back\slash
+100% sure, "yes"
+3 6
+pointer to a literal / to a literal / n
+-42 52 66 -16 15 -56 39
+zero sum 0
+-0.0025 7 -0 1e+100 3
+-2 -4 4 3
+5 bc 8 not a com
+long 280 5 9

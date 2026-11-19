@@ -1,0 +1,537 @@
+; Three-address intermediate representation
+; source: test/63_arrays_bigframe.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 36 bytes 98,105,103,58,32,37,100,32,37,100,32,37,100,32,97,102,116,101,114,61,37,100,32,100,97,102,116,101,114,61,37,46,49,102,10,0    ; "big: %d %d %d after=%d dafter=%.1f\n"
+str @.str1 len 30 bytes 104,117,103,101,58,32,37,100,32,37,100,32,37,46,50,102,32,37,99,32,99,104,101,99,107,61,37,100,10,0    ; "huge: %d %d %.2f %c check=%d\n"
+str @.str2 len 20 bytes 104,117,103,101,32,102,114,111,109,32,99,97,108,108,58,32,37,100,10,0    ; "huge from call: %d\n"
+str @.str3 len 24 bytes 103,114,105,100,91,50,93,91,51,93,61,37,100,32,116,114,97,99,101,61,37,100,10,0    ; "grid[2][3]=%d trace=%d\n"
+str @.str4 len 16 bytes 102,108,97,116,58,32,37,100,32,37,100,32,37,100,10,0    ; "flat: %d %d %d\n"
+str @.str5 len 29 bytes 99,117,98,101,91,50,93,91,51,93,91,52,93,61,37,46,50,102,32,115,117,109,61,37,46,50,102,10,0    ; "cube[2][3][4]=%.2f sum=%.2f\n"
+str @.str6 len 34 bytes 108,111,99,97,108,51,58,32,37,100,32,37,100,32,37,100,32,115,105,122,101,111,102,32,37,100,32,37,100,32,37,100,10,0    ; "local3: %d %d %d sizeof %d %d %d\n"
+str @.str7 len 14 bytes 100,101,101,112,40,51,41,32,61,32,37,100,10,0    ; "deep(3) = %d\n"
+global @grid size 80 align 4 type ptr ctype "int [4][5]"
+  init.zero 80
+global @cube size 480 align 8 type ptr ctype "double [3][4][5]"
+  init.zero 480
+global @.fc0 size 8 align 8 type double ctype "double"
+  init.double 0.0    ; 0x0000000000000000
+global @.fc1 size 8 align 8 type double ctype "double"
+  init.double 4.0    ; 0x4010000000000000
+global @.fc2 size 8 align 8 type double ctype "double"
+  init.double 2.5    ; 0x4004000000000000
+global @.fc3 size 8 align 8 type double ctype "double"
+  init.double 0.5    ; 0x3fe0000000000000
+global @.fc4 size 8 align 8 type double ctype "double"
+  init.double 0.25    ; 0x3fd0000000000000
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @trace ret int retctype "int" nparams 2 frame 0 regs 13 temps 9    ; line 10
+  .param 0 m : type ptr ctype "int (*)[5]" size 4 align 4 reg %m
+  .param 1 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %m : type ptr ctype "int (*)[5]"
+  .reg %n : type int ctype "int"
+  .reg %i : type int ctype "int"
+  .reg %t : type int ctype "int"
+begin
+  %t = 0   ; line 12
+  %i = 0   ; line 13
+.L1:
+  %t4 = %i < %n   ; line 13
+  ifFalse %t4 goto .L4   ; line 13
+  %t5 = %i * 20   ; line 13
+  %t6 = %m + %t5   ; line 13
+  %t7 = %i * 4   ; line 13
+  %t8 = %t6 + %t7   ; line 13
+  %t9 = load.w %t8   ; line 13
+  %t10 = %t + %t9   ; line 13
+  %t = %t10   ; line 13
+  %t11 = %i   ; line 13
+  %t12 = %t11 + 1   ; line 13
+  %i = %t12   ; line 13
+  goto .L1   ; line 13
+.L4:
+  return %t   ; line 14
+end
+
+func @cube_sum ret double retctype "double" nparams 1 frame 0 regs 24 temps 19    ; line 17
+  .param 0 c : type ptr ctype "double (*)[4][5]" size 4 align 4 reg %c
+  .reg %c : type ptr ctype "double (*)[4][5]"
+  .reg %i : type int ctype "int"
+  .reg %j : type int ctype "int"
+  .reg %k : type int ctype "int"
+  .reg %t : type double ctype "double"
+  .reg %t6 : type double ctype "double"
+  .reg %t16 : type double ctype "double"
+  .reg %t17 : type double ctype "double"
+begin
+  %t5 = addr @.fc0   ; line 20
+  %t6 = load.d %t5   ; line 20
+  %t = %t6   ; line 20
+  %i = 0   ; line 21
+.L5:
+  %t7 = %i < 3   ; line 21
+  ifFalse %t7 goto .L8   ; line 21
+  %j = 0   ; line 22
+.L9:
+  %t8 = %j < 4   ; line 22
+  ifFalse %t8 goto .L12   ; line 22
+  %k = 0   ; line 23
+.L13:
+  %t9 = %k < 5   ; line 23
+  ifFalse %t9 goto .L16   ; line 23
+  %t10 = %i * 160   ; line 23
+  %t11 = %c + %t10   ; line 23
+  %t12 = %j * 40   ; line 23
+  %t13 = %t11 + %t12   ; line 23
+  %t14 = %k * 8   ; line 23
+  %t15 = %t13 + %t14   ; line 23
+  %t16 = load.d %t15   ; line 23
+  %t17 = %t +.d %t16   ; line 23
+  %t = %t17   ; line 23
+  %t18 = %k   ; line 23
+  %t19 = %t18 + 1   ; line 23
+  %k = %t19   ; line 23
+  goto .L13   ; line 23
+.L16:
+  %t20 = %j   ; line 22
+  %t21 = %t20 + 1   ; line 22
+  %j = %t21   ; line 22
+  goto .L9   ; line 22
+.L12:
+  %t22 = %i   ; line 21
+  %t23 = %t22 + 1   ; line 21
+  %i = %t23   ; line 21
+  goto .L5   ; line 21
+.L8:
+  return %t   ; line 24
+end
+
+func @deep ret int retctype "int" nparams 1 frame 40000 regs 28 temps 25    ; line 28
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .local buf : type ptr ctype "int [10000]" size 40000 align 4 slot 0
+  .reg %n : type int ctype "int"
+  .reg %i : type int ctype "int"
+  .reg %s : type int ctype "int"
+begin
+  %i = 0   ; line 31
+.L17:
+  %t3 = %i < 10000   ; line 31
+  ifFalse %t3 goto .L20   ; line 31
+  %t4 = addr buf   ; line 31
+  %t5 = %i * 4   ; line 31
+  %t6 = %t4 + %t5   ; line 31
+  %t7 = %n + %i   ; line 31
+  store.w %t6, %t7   ; line 31
+  %t8 = %i   ; line 31
+  %t9 = %t8 + 1   ; line 31
+  %i = %t9   ; line 31
+  goto .L17   ; line 31
+.L20:
+  %t10 = %n == 0   ; line 32
+  ifFalse %t10 goto .L22   ; line 32
+  %t11 = addr buf   ; line 32
+  %t12 = %t11 + 39996   ; line 32
+  %t13 = load.w %t12   ; line 32
+  return %t13   ; line 32
+.L22:
+  %t14 = %n - 1   ; line 33
+  param %t14 : int   ; line 33
+  %t15 = call @deep, 1   ; line 33
+  %s = %t15   ; line 33
+  %t16 = addr buf   ; line 34
+  %t17 = %t16 + 0   ; line 34
+  %t18 = load.w %t17   ; line 34
+  %t19 = %s + %t18   ; line 34
+  %t20 = addr buf   ; line 34
+  %t21 = %t20 + 39996   ; line 34
+  %t22 = load.w %t21   ; line 34
+  %t23 = %t19 + %t22   ; line 34
+  %t24 = addr buf   ; line 34
+  %t25 = %t24 + 20000   ; line 34
+  %t26 = load.w %t25   ; line 34
+  %t27 = %t23 - %t26   ; line 34
+  return %t27   ; line 34
+end
+
+func @fill ret agg retctype "struct Huge" retsize 36016 retalign 8 sret nparams 2 frame 36016 regs 22 temps 19    ; line 39
+  .param 0 sret.ptr : type ptr ctype "struct Huge *" size 4 align 4 reg %sret.ptr sret
+  .param 1 k : type int ctype "int" size 4 align 4 reg %k
+  .local h : type agg ctype "struct Huge" size 36016 align 8 slot 0
+  .reg %sret.ptr : type ptr ctype "struct Huge *"
+  .reg %k : type int ctype "int"
+  .reg %i : type int ctype "int"
+  .reg %t12 : type double ctype "double"
+  .reg %t14 : type double ctype "double"
+  .reg %t15 : type double ctype "double"
+begin
+  %i = 0   ; line 42
+.L23:
+  %t3 = %i < 9000   ; line 42
+  ifFalse %t3 goto .L26   ; line 42
+  %t4 = addr h   ; line 42
+  %t5 = %i * 4   ; line 42
+  %t6 = %t4 + %t5   ; line 42
+  %t7 = %i * %k   ; line 42
+  store.w %t6, %t7   ; line 42
+  %t8 = %i   ; line 42
+  %t9 = %t8 + 1   ; line 42
+  %i = %t9   ; line 42
+  goto .L23   ; line 42
+.L26:
+  %t10 = addr h   ; line 43
+  %t11 = %t10 + 36000   ; line 43
+  %t12 = cvt.d.w %k   ; line 43
+  %t13 = addr @.fc1   ; line 43
+  %t14 = load.d %t13   ; line 43
+  %t15 = %t12 /.d %t14   ; line 43
+  store.d %t11, %t15   ; line 43
+  %t16 = addr h   ; line 44
+  %t17 = %t16 + 36008   ; line 44
+  %t18 = 97 + %k   ; line 44
+  %t19 = sext.b %t18   ; line 44
+  store.b %t17, %t19   ; line 44
+  %t20 = sext.b %t19   ; line 44
+  %t21 = addr h   ; line 45
+  blkcopy %sret.ptr, %t21, size 36016 align 8   ; line 45
+  return %sret.ptr   ; line 45
+end
+
+func @check ret int retctype "int" nparams 1 frame 36016 regs 16 temps 15    ; line 48
+  .param 0 h : type agg ctype "struct Huge" size 36016 align 8 byval slot 0 from reg %h.ptr
+  .local h : type agg ctype "struct Huge" size 36016 align 8 slot 0
+  .reg %h.ptr : type ptr ctype "struct Huge *"
+begin
+  %t1 = addr h   ; line 49
+  %t2 = %t1 + 0   ; line 49
+  %t3 = load.w %t2   ; line 49
+  %t4 = addr h   ; line 49
+  %t5 = %t4 + 4   ; line 49
+  %t6 = load.w %t5   ; line 49
+  %t7 = %t3 + %t6   ; line 49
+  %t8 = addr h   ; line 49
+  %t9 = %t8 + 35996   ; line 49
+  %t10 = load.w %t9   ; line 49
+  %t11 = %t7 + %t10   ; line 49
+  %t12 = addr h   ; line 49
+  %t13 = %t12 + 36008   ; line 49
+  %t14 = load.b %t13   ; line 49
+  %t15 = %t11 + %t14   ; line 49
+  return %t15   ; line 49
+end
+
+func @part_big ret int retctype "int" nparams 0 frame 70000 regs 24 temps 21    ; line 53
+  .local big : type str ctype "char [70000]" size 70000 align 1 slot 0
+  .reg %after : type int ctype "int"
+  .reg %dafter : type double ctype "double"
+  .reg %i : type int ctype "int"
+  .reg %t4 : type double ctype "double"
+begin
+  %after = 12345   ; line 58
+  %t3 = addr @.fc2   ; line 59
+  %t4 = load.d %t3   ; line 59
+  %dafter = %t4   ; line 59
+  %i = 0   ; line 60
+.L27:
+  %t5 = %i < 70000   ; line 60
+  ifFalse %t5 goto .L30   ; line 60
+  %t6 = addr big   ; line 60
+  %t7 = %t6 + %i   ; line 60
+  %t8 = %i % 100   ; line 60
+  %t9 = sext.b %t8   ; line 60
+  store.b %t7, %t9   ; line 60
+  %t10 = sext.b %t9   ; line 60
+  %t11 = %i   ; line 60
+  %t12 = %t11 + 1   ; line 60
+  %i = %t12   ; line 60
+  goto .L27   ; line 60
+.L30:
+  %t13 = addr @.str0   ; line 61
+  %t14 = addr big   ; line 61
+  %t15 = %t14 + 0   ; line 61
+  %t16 = load.b %t15   ; line 61
+  %t17 = addr big   ; line 61
+  %t18 = %t17 + 69999   ; line 61
+  %t19 = load.b %t18   ; line 61
+  %t20 = addr big   ; line 61
+  %t21 = %t20 + 35555   ; line 61
+  %t22 = load.b %t21   ; line 61
+  param %t13 : str   ; line 61
+  param %t16 : char   ; line 61
+  param %t19 : char   ; line 61
+  param %t22 : char   ; line 61
+  param %after : int   ; line 61
+  param %dafter : double   ; line 61
+  %t23 = call @printf, 6   ; line 61
+  return %after   ; line 62
+end
+
+func @part_huge ret void retctype "void" nparams 0 frame 108048 regs 26 temps 26    ; line 66
+  .local h : type agg ctype "struct Huge" size 36016 align 8 slot 0
+  .local .ret0 : type agg ctype "struct Huge" size 36016 align 8 slot 36016
+  .local .ret1 : type agg ctype "struct Huge" size 36016 align 8 slot 72032
+  .reg %t13 : type double ctype "double"
+begin
+  %t0 = addr h   ; line 68
+  %t1 = addr .ret0   ; line 68
+  %t2 = 3   ; line 68
+  param %t1 : ptr size 36016 align 8 sret   ; line 68
+  param %t2 : int   ; line 68
+  %t3 = call @fill, 2   ; line 68
+  blkcopy %t0, %t3, size 36016 align 8   ; line 68
+  %t4 = addr @.str1   ; line 69
+  %t5 = addr h   ; line 69
+  %t6 = %t5 + 400   ; line 69
+  %t7 = load.w %t6   ; line 69
+  %t8 = addr h   ; line 69
+  %t9 = %t8 + 35996   ; line 69
+  %t10 = load.w %t9   ; line 69
+  %t11 = addr h   ; line 69
+  %t12 = %t11 + 36000   ; line 69
+  %t13 = load.d %t12   ; line 69
+  %t14 = addr h   ; line 69
+  %t15 = %t14 + 36008   ; line 69
+  %t16 = load.b %t15   ; line 69
+  %t17 = addr h   ; line 69
+  param %t17 : agg size 36016 align 8   ; line 69
+  %t18 = call @check, 1   ; line 69
+  param %t4 : str   ; line 69
+  param %t7 : int   ; line 69
+  param %t10 : int   ; line 69
+  param %t13 : double   ; line 69
+  param %t16 : char   ; line 69
+  param %t18 : int   ; line 69
+  %t19 = call @printf, 6   ; line 69
+  %t20 = addr @.str2   ; line 70
+  %t21 = addr .ret1   ; line 70
+  %t22 = 2   ; line 70
+  param %t21 : ptr size 36016 align 8 sret   ; line 70
+  param %t22 : int   ; line 70
+  %t23 = call @fill, 2   ; line 70
+  param %t23 : agg size 36016 align 8   ; line 70
+  %t24 = call @check, 1   ; line 70
+  param %t20 : str   ; line 70
+  param %t24 : int   ; line 70
+  %t25 = call @printf, 2   ; line 70
+  return
+end
+
+func @main ret int retctype "int" nparams 0 frame 96 regs 122 temps 117    ; line 73
+  .local local3 : type ptr ctype "int [2][3][4]" size 96 align 4 slot 0
+  .reg %after : type int ctype "int"
+  .reg %i : type int ctype "int"
+  .reg %j : type int ctype "int"
+  .reg %k : type int ctype "int"
+  .reg %p : type ptr ctype "int *"
+  .reg %t50 : type double ctype "double"
+  .reg %t51 : type double ctype "double"
+  .reg %t53 : type double ctype "double"
+  .reg %t54 : type double ctype "double"
+  .reg %t55 : type double ctype "double"
+  .reg %t56 : type double ctype "double"
+  .reg %t58 : type double ctype "double"
+  .reg %t59 : type double ctype "double"
+  .reg %t60 : type double ctype "double"
+  .reg %t72 : type double ctype "double"
+  .reg %t74 : type double ctype "double"
+begin
+  %i = 0   ; line 78
+.L31:
+  %t5 = %i < 4   ; line 78
+  ifFalse %t5 goto .L34   ; line 78
+  %j = 0   ; line 79
+.L35:
+  %t6 = %j < 5   ; line 79
+  ifFalse %t6 goto .L38   ; line 79
+  %t7 = addr @grid   ; line 79
+  %t8 = %i * 20   ; line 79
+  %t9 = %t7 + %t8   ; line 79
+  %t10 = %j * 4   ; line 79
+  %t11 = %t9 + %t10   ; line 79
+  %t12 = %i * 10   ; line 79
+  %t13 = %t12 + %j   ; line 79
+  store.w %t11, %t13   ; line 79
+  %t14 = %j   ; line 79
+  %t15 = %t14 + 1   ; line 79
+  %j = %t15   ; line 79
+  goto .L35   ; line 79
+.L38:
+  %t16 = %i   ; line 78
+  %t17 = %t16 + 1   ; line 78
+  %i = %t17   ; line 78
+  goto .L31   ; line 78
+.L34:
+  %t18 = addr @.str3   ; line 80
+  %t19 = addr @grid   ; line 80
+  %t20 = %t19 + 40   ; line 80
+  %t21 = %t20 + 12   ; line 80
+  %t22 = load.w %t21   ; line 80
+  %t23 = addr @grid   ; line 80
+  %t24 = 4   ; line 80
+  param %t23 : ptr   ; line 80
+  param %t24 : int   ; line 80
+  %t25 = call @trace, 2   ; line 80
+  param %t18 : str   ; line 80
+  param %t22 : int   ; line 80
+  param %t25 : int   ; line 80
+  %t26 = call @printf, 3   ; line 80
+  %t27 = addr @grid   ; line 81
+  %t28 = %t27 + 0   ; line 81
+  %t29 = %t28 + 0   ; line 81
+  %p = %t29   ; line 81
+  %t30 = addr @.str4   ; line 82
+  %t31 = %p + 28   ; line 82
+  %t32 = load.w %t31   ; line 82
+  %t33 = %p + 76   ; line 82
+  %t34 = load.w %t33   ; line 82
+  %t35 = addr @grid   ; line 82
+  %t36 = %t35 + 60   ; line 82
+  %t37 = %t36 + 4   ; line 82
+  %t38 = load.w %t37   ; line 82
+  param %t30 : str   ; line 82
+  param %t32 : int   ; line 82
+  param %t34 : int   ; line 82
+  param %t38 : int   ; line 82
+  %t39 = call @printf, 4   ; line 82
+  %i = 0   ; line 83
+.L39:
+  %t40 = %i < 3   ; line 83
+  ifFalse %t40 goto .L42   ; line 83
+  %j = 0   ; line 84
+.L43:
+  %t41 = %j < 4   ; line 84
+  ifFalse %t41 goto .L46   ; line 84
+  %k = 0   ; line 85
+.L47:
+  %t42 = %k < 5   ; line 85
+  ifFalse %t42 goto .L50   ; line 85
+  %t43 = addr @cube   ; line 85
+  %t44 = %i * 160   ; line 85
+  %t45 = %t43 + %t44   ; line 85
+  %t46 = %j * 40   ; line 85
+  %t47 = %t45 + %t46   ; line 85
+  %t48 = %k * 8   ; line 85
+  %t49 = %t47 + %t48   ; line 85
+  %t50 = cvt.d.w %i   ; line 85
+  %t51 = cvt.d.w %j   ; line 85
+  %t52 = addr @.fc3   ; line 85
+  %t53 = load.d %t52   ; line 85
+  %t54 = %t51 *.d %t53   ; line 85
+  %t55 = %t50 +.d %t54   ; line 85
+  %t56 = cvt.d.w %k   ; line 85
+  %t57 = addr @.fc4   ; line 85
+  %t58 = load.d %t57   ; line 85
+  %t59 = %t56 *.d %t58   ; line 85
+  %t60 = %t55 +.d %t59   ; line 85
+  store.d %t49, %t60   ; line 85
+  %t61 = %k   ; line 85
+  %t62 = %t61 + 1   ; line 85
+  %k = %t62   ; line 85
+  goto .L47   ; line 85
+.L50:
+  %t63 = %j   ; line 84
+  %t64 = %t63 + 1   ; line 84
+  %j = %t64   ; line 84
+  goto .L43   ; line 84
+.L46:
+  %t65 = %i   ; line 83
+  %t66 = %t65 + 1   ; line 83
+  %i = %t66   ; line 83
+  goto .L39   ; line 83
+.L42:
+  %t67 = addr @.str5   ; line 86
+  %t68 = addr @cube   ; line 86
+  %t69 = %t68 + 320   ; line 86
+  %t70 = %t69 + 120   ; line 86
+  %t71 = %t70 + 32   ; line 86
+  %t72 = load.d %t71   ; line 86
+  %t73 = addr @cube   ; line 86
+  param %t73 : ptr   ; line 86
+  %t74 = call @cube_sum, 1   ; line 86
+  param %t67 : str   ; line 86
+  param %t72 : double   ; line 86
+  param %t74 : double   ; line 86
+  %t75 = call @printf, 3   ; line 86
+  %i = 0   ; line 87
+.L51:
+  %t76 = %i < 2   ; line 87
+  ifFalse %t76 goto .L54   ; line 87
+  %j = 0   ; line 88
+.L55:
+  %t77 = %j < 3   ; line 88
+  ifFalse %t77 goto .L58   ; line 88
+  %k = 0   ; line 89
+.L59:
+  %t78 = %k < 4   ; line 89
+  ifFalse %t78 goto .L62   ; line 89
+  %t79 = addr local3   ; line 89
+  %t80 = %i * 48   ; line 89
+  %t81 = %t79 + %t80   ; line 89
+  %t82 = %j * 16   ; line 89
+  %t83 = %t81 + %t82   ; line 89
+  %t84 = %k * 4   ; line 89
+  %t85 = %t83 + %t84   ; line 89
+  %t86 = %i * 100   ; line 89
+  %t87 = %j * 10   ; line 89
+  %t88 = %t86 + %t87   ; line 89
+  %t89 = %t88 + %k   ; line 89
+  store.w %t85, %t89   ; line 89
+  %t90 = %k   ; line 89
+  %t91 = %t90 + 1   ; line 89
+  %k = %t91   ; line 89
+  goto .L59   ; line 89
+.L62:
+  %t92 = %j   ; line 88
+  %t93 = %t92 + 1   ; line 88
+  %j = %t93   ; line 88
+  goto .L55   ; line 88
+.L58:
+  %t94 = %i   ; line 87
+  %t95 = %t94 + 1   ; line 87
+  %i = %t95   ; line 87
+  goto .L51   ; line 87
+.L54:
+  %t96 = addr @.str6   ; line 90
+  %t97 = addr local3   ; line 90
+  %t98 = %t97 + 48   ; line 90
+  %t99 = %t98 + 32   ; line 90
+  %t100 = %t99 + 12   ; line 90
+  %t101 = load.w %t100   ; line 90
+  %t102 = addr local3   ; line 90
+  %t103 = %t102 + 0   ; line 90
+  %t104 = %t103 + 16   ; line 90
+  %t105 = %t104 + 8   ; line 90
+  %t106 = load.w %t105   ; line 90
+  %t107 = addr local3   ; line 90
+  %t108 = %t107 + 48   ; line 90
+  %t109 = %t108 + 0   ; line 90
+  %t110 = %t109 + 0   ; line 90
+  %t111 = load.w %t110   ; line 90
+  %t112 = 96   ; line 91
+  %t113 = 48   ; line 91
+  %t114 = 16   ; line 91
+  param %t96 : str   ; line 91
+  param %t101 : int   ; line 91
+  param %t106 : int   ; line 91
+  param %t111 : int   ; line 91
+  param %t112 : int   ; line 91
+  param %t113 : int   ; line 91
+  param %t114 : int   ; line 91
+  %t115 = call @printf, 7   ; line 91
+  %t116 = call @part_big, 0   ; line 92
+  %after = %t116   ; line 92
+  %t117 = addr @.str7   ; line 93
+  %t118 = 3   ; line 93
+  param %t118 : int   ; line 93
+  %t119 = call @deep, 1   ; line 93
+  param %t117 : str   ; line 93
+  param %t119 : int   ; line 93
+  %t120 = call @printf, 2   ; line 93
+  call @part_huge, 0   ; line 94
+  %t121 = %after % 100   ; line 95
+  return %t121   ; line 95
+end

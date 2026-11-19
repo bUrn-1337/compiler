@@ -1,0 +1,104 @@
+; Three-address intermediate representation
+; source: test/74_divzero.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 7 bytes 37,100,32,37,100,10,0    ; "%d %d\n"
+str @.str1 len 10 bytes 37,100,32,37,100,32,37,100,10,0    ; "%d %d %d\n"
+str @.str2 len 15 bytes 49,48,48,32,47,32,37,100,32,61,32,37,100,10,0    ; "100 / %d = %d\n"
+str @.str3 len 13 bytes 110,111,116,32,114,101,97,99,104,101,100,10,0    ; "not reached\n"
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @quot ret int retctype "int" nparams 2 frame 0 regs 3 temps 1    ; line 7
+  .param 0 a : type int ctype "int" size 4 align 4 reg %a
+  .param 1 b : type int ctype "int" size 4 align 4 reg %b
+  .reg %a : type int ctype "int"
+  .reg %b : type int ctype "int"
+begin
+  %t2 = %a / %b   ; line 7
+  return %t2   ; line 7
+end
+
+func @rem ret int retctype "int" nparams 2 frame 0 regs 3 temps 1    ; line 8
+  .param 0 a : type int ctype "int" size 4 align 4 reg %a
+  .param 1 b : type int ctype "int" size 4 align 4 reg %b
+  .reg %a : type int ctype "int"
+  .reg %b : type int ctype "int"
+begin
+  %t2 = %a % %b   ; line 8
+  return %t2   ; line 8
+end
+
+func @main ret int retctype "int" nparams 0 frame 0 regs 31 temps 28    ; line 10
+  .reg %m : type int ctype "int"
+  .reg %z : type int ctype "int"
+  .reg %i : type int ctype "int"
+begin
+  %m = -2147483648   ; line 12
+  %t3 = addr @.str0   ; line 13
+  %t4 = -1   ; line 13
+  param %m : int   ; line 13
+  param %t4 : int   ; line 13
+  %t5 = call @quot, 2   ; line 13
+  %t6 = -1   ; line 13
+  param %m : int   ; line 13
+  param %t6 : int   ; line 13
+  %t7 = call @rem, 2   ; line 13
+  param %t3 : str   ; line 13
+  param %t5 : int   ; line 13
+  param %t7 : int   ; line 13
+  %t8 = call @printf, 3   ; line 13
+  %t9 = addr @.str1   ; line 14
+  %t10 = 1   ; line 14
+  param %m : int   ; line 14
+  param %t10 : int   ; line 14
+  %t11 = call @quot, 2   ; line 14
+  %t12 = 2   ; line 14
+  param %m : int   ; line 14
+  param %t12 : int   ; line 14
+  %t13 = call @quot, 2   ; line 14
+  %t14 = 7   ; line 14
+  param %m : int   ; line 14
+  param %t14 : int   ; line 14
+  %t15 = call @rem, 2   ; line 14
+  param %t9 : str   ; line 14
+  param %t11 : int   ; line 14
+  param %t13 : int   ; line 14
+  param %t15 : int   ; line 14
+  %t16 = call @printf, 4   ; line 14
+  %i = 33   ; line 15
+  %t17 = addr @.str0   ; line 16
+  %t18 = 1 << %i   ; line 16
+  %t19 = -256 >> %i   ; line 16
+  param %t17 : str   ; line 16
+  param %t18 : int   ; line 16
+  param %t19 : int   ; line 16
+  %t20 = call @printf, 3   ; line 16
+  %z = 0   ; line 17
+  %i = 3   ; line 18
+.L1:
+  %t21 = %i >= 0   ; line 18
+  ifFalse %t21 goto .L4   ; line 18
+  %t22 = addr @.str2   ; line 18
+  %t23 = 100   ; line 18
+  %t24 = %i - %z   ; line 18
+  param %t23 : int   ; line 18
+  param %t24 : int   ; line 18
+  %t25 = call @quot, 2   ; line 18
+  param %t22 : str   ; line 18
+  param %i : int   ; line 18
+  param %t25 : int   ; line 18
+  %t26 = call @printf, 3   ; line 18
+  %t27 = %i   ; line 18
+  %t28 = %t27 - 1   ; line 18
+  %i = %t28   ; line 18
+  goto .L1   ; line 18
+.L4:
+  %t29 = addr @.str3   ; line 19
+  param %t29 : str   ; line 19
+  %t30 = call @printf, 1   ; line 19
+  return 0   ; line 20
+end

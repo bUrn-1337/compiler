@@ -1,0 +1,18 @@
+; Three-address intermediate representation
+; source: build/malformed/long_sum_ok.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+.enddata
+
+func @f ret int retctype "int" nparams 0 frame 0 regs 0 temps 0    ; line 1
+begin
+  return 9991   ; line 1
+end
+
+func @main ret int retctype "int" nparams 0 frame 0 regs 1 temps 1    ; line 1
+begin
+  %t0 = call @f, 0   ; line 1
+  return %t0   ; line 1
+end

@@ -1,0 +1,9 @@
+for sum=18 i=7
+while sum=16 i=9
+do sum=13 i=5
+until sum=10 i=5
+until-never n=0
+nested sum=4103
+forever i=3
+decl sum=6
+mix sum=9

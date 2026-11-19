@@ -1,0 +1,3 @@
+Syntax Error [Line 1, Col 40035]: expression or statement nested too deeply (limit 10000 levels)
+
+1 error found in 'build/malformed/long_sum_over.c'; no assembly written.

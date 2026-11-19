@@ -1,0 +1,11 @@
+fp=7 (*fp)=14
+sub=6
+apply=42
+global=3 10 2
+ops[0](9,3)=12
+ops[1](9,3)=6
+ops[2](9,3)=27
+c.fn=5 +
+pick=10 6
+cmp: 0 1 1 1
+null=1

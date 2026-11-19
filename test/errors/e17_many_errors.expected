@@ -1,0 +1,16 @@
+4:6: Semantic: conflicting types for 'g' (previous declaration on line 3)
+11:12: Semantic: 'return' with a value in a function returning void
+20:9: Semantic: undeclared identifier 'undefinedVar' (first use in this function)
+21:9: Semantic: call to undeclared function 'alsoUndefined' (first use in this function)
+22:9: Semantic: function 'takesTwo' expects 2 arguments but 1 was given
+23:18: Semantic: invalid argument passing: struct Point to int
+24:9: Semantic: invalid assignment: int * to int (an explicit cast is required)
+25:7: Semantic: assignment to a non-lvalue expression
+26:11: Semantic: struct Point has no member named 'missing'
+27:9: Semantic: cannot dereference a value of non-pointer type int
+28:10: Semantic: cannot index a value of type int (an array or pointer is required)
+29:5: Semantic: 'continue' outside of a loop statement
+30:5: Semantic: 'case' label not inside a switch statement
+34:9: Semantic: duplicate case value 1
+36:5: Semantic: use of undeclared label 'missingLabel'
+39:13: Semantic: redeclaration of 'x' in the same scope (previous declaration on line 38)

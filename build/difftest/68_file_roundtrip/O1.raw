@@ -1,0 +1,28 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+fclose=0
+bytes: n=257 bad=0 sum=32895 last=-1 feof=1 again=-1
+line 1: len 601 starts "abcde" ends 10
+line 2: len 11 starts "short" ends 10
+line 3: len 17 starts "no ne" ends 100
+lines=3 longest=601 feof=1
+after rewind feof=0
+fgets(8) pieces=91
+read -6 0.250 item1
+read -3 0.500 item2
+read 2 0.750 item3
+read 9 1.000 item4
+read 18 1.250 item5
+fscanf end n=-1 sum=20 total=3.750 feof=1
+copy: <1><2><3><4><5><appended>
+then: 1
+w+: n=2 x=12 y=34
+r+: first=1
+missing=1
+remove=0 0 0 0 0
+remove again=-1
+gone=1 1
+recreated: reborn

@@ -1,0 +1,13 @@
+sizes 1 4 8 12 20 16 40
+S1 x y
+S4 -44 7 -8 -52
+S8 2 1
+S12 11 22 33 (p.a still 1)
+S12 nested 31 62 93
+S20 16 9 4 1 0 sum 30 30
+SD k 3.0000 -> m 0.7500
+after 231.500
+Big[0] 2 3 4 c 3.00 C
+Big[1] 1 2 3 b 1.50 B
+Big[2] 0 1 2 a 0.00 A
+field of call 9 6.0

@@ -1,0 +1,6 @@
+11:9: Semantic: invalid assignment: int * to int (an explicit cast is required)
+12:9: Semantic: incompatible pointer types in assignment: char * to int * (an explicit cast is required)
+13:9: Semantic: invalid assignment: int to struct S
+14:9: Semantic: invalid assignment: struct S to int
+15:11: Semantic: invalid operands to '%': struct S and int
+16:9: Semantic: invalid assignment: struct S to int *

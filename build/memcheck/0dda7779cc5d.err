@@ -1,0 +1,12 @@
+Semantic Error [Line 11, Col 12]: incompatible pointer types in return: int (*)(int) to int (*)(int, int) (an explicit cast is required)
+Semantic Error [Line 21, Col 10]: incompatible pointer types in assignment: int (*)(int) to int (*)(int, int) (an explicit cast is required)
+Semantic Error [Line 22, Col 10]: incompatible pointer types in assignment: double (*)(double) to int (*)(int, int) (an explicit cast is required)
+Semantic Error [Line 23, Col 11]: incompatible pointer types in assignment: int (*)(int, int) to int (*)(int) (an explicit cast is required)
+Semantic Error [Line 24, Col 10]: incompatible pointer types in assignment: int (*)(int, int) to double (*)(double) (an explicit cast is required)
+Semantic Error [Line 25, Col 9]: incompatible pointer types in assignment: void (*)(int) to int (*)(int, int) (an explicit cast is required)
+Semantic Error [Line 26, Col 10]: invalid assignment: int to int (*)(int, int) (an explicit cast is required)
+Semantic Error [Line 27, Col 10]: invalid assignment: int to int (*)(int, int) (an explicit cast is required)
+Semantic Error [Line 28, Col 9]: invalid assignment: int (*)(int, int) to int (an explicit cast is required)
+Semantic Error [Line 29, Col 10]: incompatible pointer types in assignment: int * to int (*)(int, int) (an explicit cast is required)
+
+10 errors found in 'test/errors/e23_funcptr_assign.c'; no assembly written.

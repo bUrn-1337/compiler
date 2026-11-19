@@ -1,0 +1,3 @@
+Syntax Error [Line 14, Col 9]: unexpected end of file (found 'case')
+
+1 error found in 'build/malformed/cut3_65_switch_long.c'; no assembly written.

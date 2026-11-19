@@ -1,0 +1,18 @@
+sorted:
+  ada       91 distinction
+  eli       91 distinction
+  cy        78 merit
+  dee       63 pass
+  bob       47 fail
+n=5 total=370 avg=74
+backwards: bob dee cy eli ada 
+found cy=78
+missing=1
+after bump cy=98 distinction
+reversed:
+  bob       47 fail
+  dee       63 pass
+  cy        98 distinction
+  eli       91 distinction
+  ada       91 distinction
+done

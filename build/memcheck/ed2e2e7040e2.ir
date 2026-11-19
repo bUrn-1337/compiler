@@ -1,0 +1,553 @@
+; Three-address intermediate representation
+; source: test/33_integrate.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 44 bytes 37,99,32,116,114,97,112,61,37,46,54,102,32,115,105,109,112,61,37,46,54,102,32,101,120,97,99,116,61,37,46,54,102,32,111,107,61,37,100,32,37,100,10,0    ; "%c trap=%.6f simp=%.6f exact=%.6f ok=%d %d\n"
+str @.str1 len 14 bytes 110,61,37,100,32,45,62,32,37,46,56,102,10,0    ; "n=%d -> %.8f\n"
+str @.str2 len 35 bytes 116,97,98,108,101,91,37,100,93,32,102,40,50,41,61,37,46,51,102,32,105,110,116,101,103,114,97,108,61,37,46,54,102,10,0    ; "table[%d] f(2)=%.3f integral=%.6f\n"
+global @.fc0 size 8 align 8 type double ctype "double"
+  init.double 2.0    ; 0x4000000000000000
+global @.fc1 size 8 align 8 type double ctype "double"
+  init.double 1.0    ; 0x3ff0000000000000
+global @.fc2 size 8 align 8 type double ctype "double"
+  init.double 0.0    ; 0x0000000000000000
+global @.fc3 size 8 align 8 type double ctype "double"
+  init.double 4.0    ; 0x4010000000000000
+global @.fc4 size 8 align 8 type double ctype "double"
+  init.double 3.0    ; 0x4008000000000000
+global @.fc5 size 8 align 8 type double ctype "double"
+  init.double 9.0    ; 0x4022000000000000
+global @.fc6 size 8 align 8 type double ctype "double"
+  init.double 18.0    ; 0x4032000000000000
+global @.fc7 size 8 align 8 type double ctype "double"
+  init.double 0.69314718055994529    ; 0x3fe62e42fefa39ef
+global @.fc8 size 8 align 8 type double ctype "double"
+  init.double 0.001    ; 0x3f50624dd2f1a9fc
+global @.fc9 size 8 align 8 type double ctype "double"
+  init.double 1.0000000000000001e-09    ; 0x3e112e0be826d695
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @fsquare ret double retctype "double" nparams 1 frame 0 regs 2 temps 1    ; line 6
+  .param 0 x : type double ctype "double" size 8 align 8 reg %x
+  .reg %x : type double ctype "double"
+  .reg %t1 : type double ctype "double"
+begin
+  %t1 = %x *.d %x   ; line 6
+  return %t1   ; line 6
+end
+
+func @fcube ret double retctype "double" nparams 1 frame 0 regs 3 temps 2    ; line 7
+  .param 0 x : type double ctype "double" size 8 align 8 reg %x
+  .reg %x : type double ctype "double"
+  .reg %t1 : type double ctype "double"
+  .reg %t2 : type double ctype "double"
+begin
+  %t1 = %x *.d %x   ; line 7
+  %t2 = %t1 *.d %x   ; line 7
+  return %t2   ; line 7
+end
+
+func @flinear ret double retctype "double" nparams 1 frame 0 regs 7 temps 6    ; line 8
+  .param 0 x : type double ctype "double" size 8 align 8 reg %x
+  .reg %x : type double ctype "double"
+  .reg %t2 : type double ctype "double"
+  .reg %t3 : type double ctype "double"
+  .reg %t5 : type double ctype "double"
+  .reg %t6 : type double ctype "double"
+begin
+  %t1 = addr @.fc0   ; line 8
+  %t2 = load.d %t1   ; line 8
+  %t3 = %t2 *.d %x   ; line 8
+  %t4 = addr @.fc1   ; line 8
+  %t5 = load.d %t4   ; line 8
+  %t6 = %t3 +.d %t5   ; line 8
+  return %t6   ; line 8
+end
+
+func @finverse ret double retctype "double" nparams 1 frame 0 regs 4 temps 3    ; line 9
+  .param 0 x : type double ctype "double" size 8 align 8 reg %x
+  .reg %x : type double ctype "double"
+  .reg %t2 : type double ctype "double"
+  .reg %t3 : type double ctype "double"
+begin
+  %t1 = addr @.fc1   ; line 9
+  %t2 = load.d %t1   ; line 9
+  %t3 = %t2 /.d %x   ; line 9
+  return %t3   ; line 9
+end
+
+func @dabs ret double retctype "double" nparams 1 frame 0 regs 6 temps 5    ; line 11
+  .param 0 v : type double ctype "double" size 8 align 8 reg %v
+  .reg %v : type double ctype "double"
+  .reg %t1 : type double ctype "double"
+  .reg %t3 : type double ctype "double"
+  .reg %t5 : type double ctype "double"
+begin
+  %t2 = addr @.fc2   ; line 11
+  %t3 = load.d %t2   ; line 11
+  %t4 = %v <.d %t3   ; line 11
+  ifFalse %t4 goto .L2   ; line 11
+  %t5 = -.d %v   ; line 11
+  %t1 = %t5   ; line 11
+  goto .L3   ; line 11
+.L2:
+  %t1 = %v   ; line 11
+.L3:
+  return %t1   ; line 11
+end
+
+func @trapezoid ret double retctype "double" nparams 4 frame 0 regs 25 temps 18    ; line 13
+  .param 0 f : type ptr ctype "double (*)(double)" size 4 align 4 reg %f
+  .param 1 a : type double ctype "double" size 8 align 8 reg %a
+  .param 2 b : type double ctype "double" size 8 align 8 reg %b
+  .param 3 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %f : type ptr ctype "double (*)(double)"
+  .reg %a : type double ctype "double"
+  .reg %b : type double ctype "double"
+  .reg %n : type int ctype "int"
+  .reg %h : type double ctype "double"
+  .reg %s : type double ctype "double"
+  .reg %i : type int ctype "int"
+  .reg %t7 : type double ctype "double"
+  .reg %t8 : type double ctype "double"
+  .reg %t9 : type double ctype "double"
+  .reg %t10 : type double ctype "double"
+  .reg %t11 : type double ctype "double"
+  .reg %t12 : type double ctype "double"
+  .reg %t14 : type double ctype "double"
+  .reg %t15 : type double ctype "double"
+  .reg %t17 : type double ctype "double"
+  .reg %t18 : type double ctype "double"
+  .reg %t19 : type double ctype "double"
+  .reg %t20 : type double ctype "double"
+  .reg %t21 : type double ctype "double"
+  .reg %t24 : type double ctype "double"
+begin
+  %t7 = %b -.d %a   ; line 14
+  %t8 = cvt.d.w %n   ; line 14
+  %t9 = %t7 /.d %t8   ; line 14
+  %h = %t9   ; line 14
+  param %a : double   ; line 15
+  %t10 = call %f, 1   ; line 15
+  param %b : double   ; line 15
+  %t11 = call %f, 1   ; line 15
+  %t12 = %t10 +.d %t11   ; line 15
+  %t13 = addr @.fc0   ; line 15
+  %t14 = load.d %t13   ; line 15
+  %t15 = %t12 /.d %t14   ; line 15
+  %s = %t15   ; line 15
+  %i = 1   ; line 17
+.L4:
+  %t16 = %i < %n   ; line 17
+  ifFalse %t16 goto .L7   ; line 17
+  %t17 = cvt.d.w %i   ; line 17
+  %t18 = %t17 *.d %h   ; line 17
+  %t19 = %a +.d %t18   ; line 17
+  param %t19 : double   ; line 17
+  %t20 = call %f, 1   ; line 17
+  %t21 = %s +.d %t20   ; line 17
+  %s = %t21   ; line 17
+  %t22 = %i   ; line 17
+  %t23 = %t22 + 1   ; line 17
+  %i = %t23   ; line 17
+  goto .L4   ; line 17
+.L7:
+  %t24 = %s *.d %h   ; line 18
+  return %t24   ; line 18
+end
+
+func @simpson ret double retctype "double" nparams 4 frame 0 regs 32 temps 25    ; line 22
+  .param 0 f : type ptr ctype "double (*)(double)" size 4 align 4 reg %f
+  .param 1 a : type double ctype "double" size 8 align 8 reg %a
+  .param 2 b : type double ctype "double" size 8 align 8 reg %b
+  .param 3 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %f : type ptr ctype "double (*)(double)"
+  .reg %a : type double ctype "double"
+  .reg %b : type double ctype "double"
+  .reg %n : type int ctype "int"
+  .reg %h : type double ctype "double"
+  .reg %s : type double ctype "double"
+  .reg %i : type int ctype "int"
+  .reg %t7 : type double ctype "double"
+  .reg %t8 : type double ctype "double"
+  .reg %t9 : type double ctype "double"
+  .reg %t10 : type double ctype "double"
+  .reg %t11 : type double ctype "double"
+  .reg %t12 : type double ctype "double"
+  .reg %t14 : type double ctype "double"
+  .reg %t17 : type double ctype "double"
+  .reg %t19 : type double ctype "double"
+  .reg %t20 : type double ctype "double"
+  .reg %t21 : type double ctype "double"
+  .reg %t22 : type double ctype "double"
+  .reg %t23 : type double ctype "double"
+  .reg %t24 : type double ctype "double"
+  .reg %t25 : type double ctype "double"
+  .reg %t28 : type double ctype "double"
+  .reg %t30 : type double ctype "double"
+  .reg %t31 : type double ctype "double"
+begin
+  %t7 = %b -.d %a   ; line 23
+  %t8 = cvt.d.w %n   ; line 23
+  %t9 = %t7 /.d %t8   ; line 23
+  %h = %t9   ; line 23
+  param %a : double   ; line 24
+  %t10 = call %f, 1   ; line 24
+  param %b : double   ; line 24
+  %t11 = call %f, 1   ; line 24
+  %t12 = %t10 +.d %t11   ; line 24
+  %s = %t12   ; line 24
+  %i = 1   ; line 26
+.L8:
+  %t13 = %i < %n   ; line 26
+  ifFalse %t13 goto .L11   ; line 26
+  %t15 = %i % 2   ; line 26
+  ifFalse %t15 goto .L13   ; line 26
+  %t16 = addr @.fc3   ; line 26
+  %t17 = load.d %t16   ; line 26
+  %t14 = %t17   ; line 26
+  goto .L14   ; line 26
+.L13:
+  %t18 = addr @.fc0   ; line 26
+  %t19 = load.d %t18   ; line 26
+  %t14 = %t19   ; line 26
+.L14:
+  %t20 = cvt.d.w %i   ; line 26
+  %t21 = %t20 *.d %h   ; line 26
+  %t22 = %a +.d %t21   ; line 26
+  param %t22 : double   ; line 26
+  %t23 = call %f, 1   ; line 26
+  %t24 = %t14 *.d %t23   ; line 26
+  %t25 = %s +.d %t24   ; line 26
+  %s = %t25   ; line 26
+  %t26 = %i   ; line 26
+  %t27 = %t26 + 1   ; line 26
+  %i = %t27   ; line 26
+  goto .L8   ; line 26
+.L11:
+  %t28 = %s *.d %h   ; line 27
+  %t29 = addr @.fc4   ; line 27
+  %t30 = load.d %t29   ; line 27
+  %t31 = %t28 /.d %t30   ; line 27
+  return %t31   ; line 27
+end
+
+func @main ret int retctype "int" nparams 0 frame 176 regs 198 temps 195    ; line 32
+  .local cases : type ptr ctype "struct Case [4]" size 160 align 8 slot 0
+  .local table : type ptr ctype "double (*[3])(double)" size 12 align 4 slot 160
+  .reg %i : type int ctype "int"
+  .reg %t : type double ctype "double"
+  .reg %s : type double ctype "double"
+  .reg %t10 : type double ctype "double"
+  .reg %t15 : type double ctype "double"
+  .reg %t20 : type double ctype "double"
+  .reg %t31 : type double ctype "double"
+  .reg %t36 : type double ctype "double"
+  .reg %t41 : type double ctype "double"
+  .reg %t52 : type double ctype "double"
+  .reg %t57 : type double ctype "double"
+  .reg %t62 : type double ctype "double"
+  .reg %t73 : type double ctype "double"
+  .reg %t78 : type double ctype "double"
+  .reg %t83 : type double ctype "double"
+  .reg %t96 : type double ctype "double"
+  .reg %t101 : type double ctype "double"
+  .reg %t103 : type double ctype "double"
+  .reg %t112 : type double ctype "double"
+  .reg %t117 : type double ctype "double"
+  .reg %t119 : type double ctype "double"
+  .reg %t130 : type double ctype "double"
+  .reg %t135 : type double ctype "double"
+  .reg %t136 : type double ctype "double"
+  .reg %t137 : type double ctype "double"
+  .reg %t139 : type double ctype "double"
+  .reg %t145 : type double ctype "double"
+  .reg %t146 : type double ctype "double"
+  .reg %t147 : type double ctype "double"
+  .reg %t149 : type double ctype "double"
+  .reg %t159 : type double ctype "double"
+  .reg %t161 : type double ctype "double"
+  .reg %t163 : type double ctype "double"
+  .reg %t183 : type double ctype "double"
+  .reg %t184 : type double ctype "double"
+  .reg %t190 : type double ctype "double"
+  .reg %t192 : type double ctype "double"
+  .reg %t194 : type double ctype "double"
+begin
+  %t3 = addr cases   ; line 37
+  %t4 = %t3 + 0   ; line 37
+  %t5 = faddr @fsquare   ; line 37
+  store.w %t4, %t5   ; line 37
+  %t6 = addr cases   ; line 37
+  %t7 = %t6 + 0   ; line 37
+  %t8 = %t7 + 8   ; line 37
+  %t9 = addr @.fc2   ; line 37
+  %t10 = load.d %t9   ; line 37
+  store.d %t8, %t10   ; line 37
+  %t11 = addr cases   ; line 37
+  %t12 = %t11 + 0   ; line 37
+  %t13 = %t12 + 16   ; line 37
+  %t14 = addr @.fc4   ; line 37
+  %t15 = load.d %t14   ; line 37
+  store.d %t13, %t15   ; line 37
+  %t16 = addr cases   ; line 38
+  %t17 = %t16 + 0   ; line 38
+  %t18 = %t17 + 24   ; line 38
+  %t19 = addr @.fc5   ; line 38
+  %t20 = load.d %t19   ; line 38
+  store.d %t18, %t20   ; line 38
+  %t21 = addr cases   ; line 38
+  %t22 = %t21 + 0   ; line 38
+  %t23 = %t22 + 32   ; line 38
+  store.b %t23, 113   ; line 38
+  %t24 = addr cases   ; line 39
+  %t25 = %t24 + 40   ; line 39
+  %t26 = faddr @fcube   ; line 39
+  store.w %t25, %t26   ; line 39
+  %t27 = addr cases   ; line 39
+  %t28 = %t27 + 40   ; line 39
+  %t29 = %t28 + 8   ; line 39
+  %t30 = addr @.fc2   ; line 39
+  %t31 = load.d %t30   ; line 39
+  store.d %t29, %t31   ; line 39
+  %t32 = addr cases   ; line 39
+  %t33 = %t32 + 40   ; line 39
+  %t34 = %t33 + 16   ; line 39
+  %t35 = addr @.fc0   ; line 39
+  %t36 = load.d %t35   ; line 39
+  store.d %t34, %t36   ; line 39
+  %t37 = addr cases   ; line 40
+  %t38 = %t37 + 40   ; line 40
+  %t39 = %t38 + 24   ; line 40
+  %t40 = addr @.fc3   ; line 40
+  %t41 = load.d %t40   ; line 40
+  store.d %t39, %t41   ; line 40
+  %t42 = addr cases   ; line 40
+  %t43 = %t42 + 40   ; line 40
+  %t44 = %t43 + 32   ; line 40
+  store.b %t44, 99   ; line 40
+  %t45 = addr cases   ; line 41
+  %t46 = %t45 + 80   ; line 41
+  %t47 = faddr @flinear   ; line 41
+  store.w %t46, %t47   ; line 41
+  %t48 = addr cases   ; line 41
+  %t49 = %t48 + 80   ; line 41
+  %t50 = %t49 + 8   ; line 41
+  %t51 = addr @.fc1   ; line 41
+  %t52 = load.d %t51   ; line 41
+  store.d %t50, %t52   ; line 41
+  %t53 = addr cases   ; line 41
+  %t54 = %t53 + 80   ; line 41
+  %t55 = %t54 + 16   ; line 41
+  %t56 = addr @.fc3   ; line 41
+  %t57 = load.d %t56   ; line 41
+  store.d %t55, %t57   ; line 41
+  %t58 = addr cases   ; line 42
+  %t59 = %t58 + 80   ; line 42
+  %t60 = %t59 + 24   ; line 42
+  %t61 = addr @.fc6   ; line 42
+  %t62 = load.d %t61   ; line 42
+  store.d %t60, %t62   ; line 42
+  %t63 = addr cases   ; line 42
+  %t64 = %t63 + 80   ; line 42
+  %t65 = %t64 + 32   ; line 42
+  store.b %t65, 108   ; line 42
+  %t66 = addr cases   ; line 43
+  %t67 = %t66 + 120   ; line 43
+  %t68 = faddr @finverse   ; line 43
+  store.w %t67, %t68   ; line 43
+  %t69 = addr cases   ; line 43
+  %t70 = %t69 + 120   ; line 43
+  %t71 = %t70 + 8   ; line 43
+  %t72 = addr @.fc1   ; line 43
+  %t73 = load.d %t72   ; line 43
+  store.d %t71, %t73   ; line 43
+  %t74 = addr cases   ; line 43
+  %t75 = %t74 + 120   ; line 43
+  %t76 = %t75 + 16   ; line 43
+  %t77 = addr @.fc0   ; line 43
+  %t78 = load.d %t77   ; line 43
+  store.d %t76, %t78   ; line 43
+  %t79 = addr cases   ; line 44
+  %t80 = %t79 + 120   ; line 44
+  %t81 = %t80 + 24   ; line 44
+  %t82 = addr @.fc7   ; line 44
+  %t83 = load.d %t82   ; line 44
+  store.d %t81, %t83   ; line 44
+  %t84 = addr cases   ; line 44
+  %t85 = %t84 + 120   ; line 44
+  %t86 = %t85 + 32   ; line 44
+  store.b %t86, 105   ; line 44
+  %i = 0   ; line 46
+.L15:
+  %t87 = %i < 4   ; line 46
+  ifFalse %t87 goto .L18   ; line 46
+  %t88 = addr cases   ; line 47
+  %t89 = %i * 40   ; line 47
+  %t90 = %t88 + %t89   ; line 47
+  %t91 = load.w %t90   ; line 47
+  %t92 = addr cases   ; line 47
+  %t93 = %i * 40   ; line 47
+  %t94 = %t92 + %t93   ; line 47
+  %t95 = %t94 + 8   ; line 47
+  %t96 = load.d %t95   ; line 47
+  %t97 = addr cases   ; line 47
+  %t98 = %i * 40   ; line 47
+  %t99 = %t97 + %t98   ; line 47
+  %t100 = %t99 + 16   ; line 47
+  %t101 = load.d %t100   ; line 47
+  %t102 = 2000   ; line 47
+  param %t91 : ptr   ; line 47
+  param %t96 : double   ; line 47
+  param %t101 : double   ; line 47
+  param %t102 : int   ; line 47
+  %t103 = call @trapezoid, 4   ; line 47
+  %t = %t103   ; line 47
+  %t104 = addr cases   ; line 48
+  %t105 = %i * 40   ; line 48
+  %t106 = %t104 + %t105   ; line 48
+  %t107 = load.w %t106   ; line 48
+  %t108 = addr cases   ; line 48
+  %t109 = %i * 40   ; line 48
+  %t110 = %t108 + %t109   ; line 48
+  %t111 = %t110 + 8   ; line 48
+  %t112 = load.d %t111   ; line 48
+  %t113 = addr cases   ; line 48
+  %t114 = %i * 40   ; line 48
+  %t115 = %t113 + %t114   ; line 48
+  %t116 = %t115 + 16   ; line 48
+  %t117 = load.d %t116   ; line 48
+  %t118 = 2000   ; line 48
+  param %t107 : ptr   ; line 48
+  param %t112 : double   ; line 48
+  param %t117 : double   ; line 48
+  param %t118 : int   ; line 48
+  %t119 = call @simpson, 4   ; line 48
+  %s = %t119   ; line 48
+  %t120 = addr @.str0   ; line 49
+  %t121 = addr cases   ; line 50
+  %t122 = %i * 40   ; line 50
+  %t123 = %t121 + %t122   ; line 50
+  %t124 = %t123 + 32   ; line 50
+  %t125 = load.b %t124   ; line 50
+  %t126 = addr cases   ; line 50
+  %t127 = %i * 40   ; line 50
+  %t128 = %t126 + %t127   ; line 50
+  %t129 = %t128 + 24   ; line 50
+  %t130 = load.d %t129   ; line 50
+  %t131 = addr cases   ; line 51
+  %t132 = %i * 40   ; line 51
+  %t133 = %t131 + %t132   ; line 51
+  %t134 = %t133 + 24   ; line 51
+  %t135 = load.d %t134   ; line 51
+  %t136 = %t -.d %t135   ; line 51
+  param %t136 : double   ; line 51
+  %t137 = call @dabs, 1   ; line 51
+  %t138 = addr @.fc8   ; line 51
+  %t139 = load.d %t138   ; line 51
+  %t140 = %t137 <.d %t139   ; line 51
+  %t141 = addr cases   ; line 52
+  %t142 = %i * 40   ; line 52
+  %t143 = %t141 + %t142   ; line 52
+  %t144 = %t143 + 24   ; line 52
+  %t145 = load.d %t144   ; line 52
+  %t146 = %s -.d %t145   ; line 52
+  param %t146 : double   ; line 52
+  %t147 = call @dabs, 1   ; line 52
+  %t148 = addr @.fc9   ; line 52
+  %t149 = load.d %t148   ; line 52
+  %t150 = %t147 <.d %t149   ; line 52
+  param %t120 : str   ; line 52
+  param %t125 : char   ; line 52
+  param %t : double   ; line 52
+  param %s : double   ; line 52
+  param %t130 : double   ; line 52
+  param %t140 : int   ; line 52
+  param %t150 : int   ; line 52
+  %t151 = call @printf, 7   ; line 52
+  %t152 = %i   ; line 46
+  %t153 = %t152 + 1   ; line 46
+  %i = %t153   ; line 46
+  goto .L15   ; line 46
+.L18:
+  %i = 1   ; line 56
+.L19:
+  %t154 = %i <= 4   ; line 56
+  ifFalse %t154 goto .L22   ; line 56
+  %t155 = addr @.str1   ; line 57
+  %t156 = 10 * %i   ; line 57
+  %t157 = faddr @fsquare   ; line 57
+  %t158 = addr @.fc2   ; line 57
+  %t159 = load.d %t158   ; line 57
+  %t160 = addr @.fc1   ; line 57
+  %t161 = load.d %t160   ; line 57
+  %t162 = 10 * %i   ; line 57
+  param %t157 : ptr   ; line 57
+  param %t159 : double   ; line 57
+  param %t161 : double   ; line 57
+  param %t162 : int   ; line 57
+  %t163 = call @trapezoid, 4   ; line 57
+  param %t155 : str   ; line 57
+  param %t156 : int   ; line 57
+  param %t163 : double   ; line 57
+  %t164 = call @printf, 3   ; line 57
+  %t165 = %i   ; line 56
+  %t166 = %t165 + 1   ; line 56
+  %i = %t166   ; line 56
+  goto .L19   ; line 56
+.L22:
+  %t167 = addr table   ; line 60
+  %t168 = %t167 + 0   ; line 60
+  %t169 = faddr @fsquare   ; line 60
+  store.w %t168, %t169   ; line 60
+  %t170 = addr table   ; line 60
+  %t171 = %t170 + 4   ; line 60
+  %t172 = faddr @fcube   ; line 60
+  store.w %t171, %t172   ; line 60
+  %t173 = addr table   ; line 60
+  %t174 = %t173 + 8   ; line 60
+  %t175 = faddr @flinear   ; line 60
+  store.w %t174, %t175   ; line 60
+  %i = 0   ; line 61
+.L23:
+  %t176 = %i < 3   ; line 61
+  ifFalse %t176 goto .L26   ; line 61
+  %t177 = addr @.str2   ; line 62
+  %t178 = addr table   ; line 62
+  %t179 = %i * 4   ; line 62
+  %t180 = %t178 + %t179   ; line 62
+  %t181 = load.w %t180   ; line 62
+  %t182 = addr @.fc0   ; line 62
+  %t183 = load.d %t182   ; line 62
+  param %t183 : double   ; line 62
+  %t184 = call %t181, 1   ; line 62
+  %t185 = addr table   ; line 63
+  %t186 = %i * 4   ; line 63
+  %t187 = %t185 + %t186   ; line 63
+  %t188 = load.w %t187   ; line 63
+  %t189 = addr @.fc2   ; line 63
+  %t190 = load.d %t189   ; line 63
+  %t191 = addr @.fc1   ; line 63
+  %t192 = load.d %t191   ; line 63
+  %t193 = 1000   ; line 63
+  param %t188 : ptr   ; line 63
+  param %t190 : double   ; line 63
+  param %t192 : double   ; line 63
+  param %t193 : int   ; line 63
+  %t194 = call @trapezoid, 4   ; line 63
+  param %t177 : str   ; line 63
+  param %i : int   ; line 63
+  param %t184 : double   ; line 63
+  param %t194 : double   ; line 63
+  %t195 = call @printf, 4   ; line 63
+  %t196 = %i   ; line 61
+  %t197 = %t196 + 1   ; line 61
+  %i = %t197   ; line 61
+  goto .L23   ; line 61
+.L26:
+  return 0   ; line 64
+end

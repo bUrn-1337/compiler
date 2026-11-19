@@ -1,0 +1,3 @@
+Syntax Error [Line 20, Col 17]: unexpected end of file, expecting ')' (found 'Stat')
+
+1 error found in 'build/malformed/cut2_27_float_struct.c'; no assembly written.

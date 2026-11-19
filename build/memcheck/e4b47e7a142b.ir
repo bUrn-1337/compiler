@@ -1,0 +1,455 @@
+; Three-address intermediate representation
+; source: test/25_float_arrays.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 11 bytes 37,46,54,102,32,37,46,54,102,10,0    ; "%.6f %.6f\n"
+str @.str1 len 16 bytes 37,46,49,102,32,37,46,49,102,32,37,46,49,102,10,0    ; "%.1f %.1f %.1f\n"
+str @.str2 len 9 bytes 37,46,49,102,32,37,100,10,0    ; "%.1f %d\n"
+str @.str3 len 12 bytes 37,46,49,102,32,37,100,32,37,100,10,0    ; "%.1f %d %d\n"
+str @.str4 len 16 bytes 37,46,50,102,32,37,46,50,102,32,37,46,50,102,10,0    ; "%.2f %.2f %.2f\n"
+str @.str5 len 9 bytes 37,46,50,102,32,37,100,10,0    ; "%.2f %d\n"
+str @.str6 len 6 bytes 37,54,46,50,102,0    ; "%6.2f"
+str @.str7 len 2 bytes 10,0    ; "\n"
+str @.str8 len 11 bytes 37,46,50,102,32,37,46,50,102,10,0    ; "%.2f %.2f\n"
+str @.str9 len 21 bytes 37,46,50,102,32,37,46,50,102,32,37,46,50,102,32,37,46,50,102,10,0    ; "%.2f %.2f %.2f %.2f\n"
+str @.str10 len 10 bytes 37,100,32,37,100,32,37,100,10,0    ; "%d %d %d\n"
+global @garr size 24 align 8 type ptr ctype "double [3]"
+  init.double 1.0    ; 0x3ff0000000000000
+  init.double 2.5    ; 0x4004000000000000
+  init.double 4.0    ; 0x4010000000000000
+global @gfa size 16 align 4 type ptr ctype "float [4]"
+  init.float 0.5    ; 0x3f000000
+  init.float 1.5    ; 0x3fc00000
+  init.float 2.5    ; 0x40200000
+  init.zero 4
+global @gmat size 32 align 8 type ptr ctype "double [2][2]"
+  init.double 1.5    ; 0x3ff8000000000000
+  init.double 2.5    ; 0x4004000000000000
+  init.double 3.5    ; 0x400c000000000000
+  init.double 4.5    ; 0x4012000000000000
+global @.fc0 size 8 align 8 type double ctype "double"
+  init.double 0.0    ; 0x0000000000000000
+global @.fc1 size 8 align 8 type double ctype "double"
+  init.double 0.5    ; 0x3fe0000000000000
+global @.fc2 size 4 align 4 type float ctype "float"
+  init.float 0.25    ; 0x3e800000
+global @.fc3 size 8 align 8 type double ctype "double"
+  init.double 2.0    ; 0x4000000000000000
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @sum ret double retctype "double" nparams 2 frame 0 regs 13 temps 9    ; line 7
+  .param 0 a : type ptr ctype "double *" size 4 align 4 reg %a
+  .param 1 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %a : type ptr ctype "double *"
+  .reg %n : type int ctype "int"
+  .reg %s : type double ctype "double"
+  .reg %i : type int ctype "int"
+  .reg %t5 : type double ctype "double"
+  .reg %t9 : type double ctype "double"
+  .reg %t10 : type double ctype "double"
+begin
+  %t4 = addr @.fc0   ; line 8
+  %t5 = load.d %t4   ; line 8
+  %s = %t5   ; line 8
+  %i = 0   ; line 10
+.L1:
+  %t6 = %i < %n   ; line 10
+  ifFalse %t6 goto .L4   ; line 10
+  %t7 = %i * 8   ; line 10
+  %t8 = %a + %t7   ; line 10
+  %t9 = load.d %t8   ; line 10
+  %t10 = %s +.d %t9   ; line 10
+  %s = %t10   ; line 10
+  %t11 = %i   ; line 10
+  %t12 = %t11 + 1   ; line 10
+  %i = %t12   ; line 10
+  goto .L1   ; line 10
+.L4:
+  return %s   ; line 11
+end
+
+func @fmax3 ret float retctype "float" nparams 1 frame 0 regs 14 temps 12    ; line 14
+  .param 0 a : type ptr ctype "float *" size 4 align 4 reg %a
+  .reg %a : type ptr ctype "float *"
+  .reg %m : type float ctype "float"
+  .reg %t3 : type float ctype "float"
+  .reg %t5 : type float ctype "float"
+  .reg %t8 : type float ctype "float"
+  .reg %t10 : type float ctype "float"
+  .reg %t13 : type float ctype "float"
+begin
+  %t2 = %a + 0   ; line 15
+  %t3 = load.s %t2   ; line 15
+  %m = %t3   ; line 15
+  %t4 = %a + 4   ; line 16
+  %t5 = load.s %t4   ; line 16
+  %t6 = %t5 >.s %m   ; line 16
+  ifFalse %t6 goto .L6   ; line 16
+  %t7 = %a + 4   ; line 16
+  %t8 = load.s %t7   ; line 16
+  %m = %t8   ; line 16
+.L6:
+  %t9 = %a + 8   ; line 17
+  %t10 = load.s %t9   ; line 17
+  %t11 = %t10 >.s %m   ; line 17
+  ifFalse %t11 goto .L8   ; line 17
+  %t12 = %a + 8   ; line 17
+  %t13 = load.s %t12   ; line 17
+  %m = %t13   ; line 17
+.L8:
+  return %m   ; line 18
+end
+
+func @scaleRow ret void retctype "void" nparams 3 frame 0 regs 13 temps 9    ; line 21
+  .param 0 row : type ptr ctype "double *" size 4 align 4 reg %row
+  .param 1 n : type int ctype "int" size 4 align 4 reg %n
+  .param 2 k : type double ctype "double" size 8 align 8 reg %k
+  .reg %row : type ptr ctype "double *"
+  .reg %n : type int ctype "int"
+  .reg %k : type double ctype "double"
+  .reg %i : type int ctype "int"
+  .reg %t9 : type double ctype "double"
+  .reg %t10 : type double ctype "double"
+begin
+  %i = 0   ; line 23
+.L9:
+  %t4 = %i < %n   ; line 23
+  ifFalse %t4 goto .L12   ; line 23
+  %t5 = %i * 8   ; line 23
+  %t6 = %row + %t5   ; line 23
+  %t7 = %i * 8   ; line 23
+  %t8 = %row + %t7   ; line 23
+  %t9 = load.d %t8   ; line 23
+  %t10 = %t9 *.d %k   ; line 23
+  store.d %t6, %t10   ; line 23
+  %t11 = %i   ; line 23
+  %t12 = %t11 + 1   ; line 23
+  %i = %t12   ; line 23
+  goto .L9   ; line 23
+.L12:
+  return
+end
+
+func @main ret int retctype "int" nparams 0 frame 152 regs 171 temps 167    ; line 26
+  .local a : type ptr ctype "double [5]" size 40 align 8 slot 0
+  .local m : type ptr ctype "double [3][4]" size 96 align 8 slot 40
+  .local fa : type ptr ctype "float [4]" size 16 align 4 slot 136
+  .reg %p : type ptr ctype "double *"
+  .reg %q : type ptr ctype "float *"
+  .reg %i : type int ctype "int"
+  .reg %j : type int ctype "int"
+  .reg %t8 : type double ctype "double"
+  .reg %t10 : type double ctype "double"
+  .reg %t11 : type double ctype "double"
+  .reg %t17 : type double ctype "double"
+  .reg %t20 : type double ctype "double"
+  .reg %t24 : type double ctype "double"
+  .reg %t26 : type double ctype "double"
+  .reg %t28 : type double ctype "double"
+  .reg %t32 : type double ctype "double"
+  .reg %t40 : type double ctype "double"
+  .reg %t44 : type double ctype "double"
+  .reg %t46 : type double ctype "double"
+  .reg %t53 : type float ctype "float"
+  .reg %t55 : type float ctype "float"
+  .reg %t56 : type float ctype "float"
+  .reg %t61 : type float ctype "float"
+  .reg %t62 : type double ctype "double"
+  .reg %t64 : type float ctype "float"
+  .reg %t65 : type double ctype "double"
+  .reg %t67 : type float ctype "float"
+  .reg %t68 : type double ctype "double"
+  .reg %t72 : type float ctype "float"
+  .reg %t73 : type double ctype "double"
+  .reg %t87 : type double ctype "double"
+  .reg %t89 : type double ctype "double"
+  .reg %t90 : type double ctype "double"
+  .reg %t99 : type double ctype "double"
+  .reg %t108 : type double ctype "double"
+  .reg %t120 : type double ctype "double"
+  .reg %t125 : type double ctype "double"
+  .reg %t130 : type double ctype "double"
+  .reg %t133 : type double ctype "double"
+  .reg %t136 : type double ctype "double"
+  .reg %t141 : type float ctype "float"
+  .reg %t142 : type double ctype "double"
+  .reg %t145 : type float ctype "float"
+  .reg %t146 : type double ctype "double"
+  .reg %t149 : type float ctype "float"
+  .reg %t150 : type double ctype "double"
+  .reg %t153 : type float ctype "float"
+  .reg %t154 : type double ctype "double"
+  .reg %t160 : type double ctype "double"
+  .reg %t164 : type double ctype "double"
+begin
+  %i = 0   ; line 34
+.L13:
+  %t4 = %i < 5   ; line 34
+  ifFalse %t4 goto .L16   ; line 34
+  %t5 = addr a   ; line 34
+  %t6 = %i * 8   ; line 34
+  %t7 = %t5 + %t6   ; line 34
+  %t8 = cvt.d.w %i   ; line 34
+  %t9 = addr @.fc1   ; line 34
+  %t10 = load.d %t9   ; line 34
+  %t11 = %t8 +.d %t10   ; line 34
+  store.d %t7, %t11   ; line 34
+  %t12 = %i   ; line 34
+  %t13 = %t12 + 1   ; line 34
+  %i = %t13   ; line 34
+  goto .L13   ; line 34
+.L16:
+  %t14 = addr @.str0   ; line 35
+  %t15 = addr a   ; line 35
+  %t16 = 5   ; line 35
+  param %t15 : ptr   ; line 35
+  param %t16 : int   ; line 35
+  %t17 = call @sum, 2   ; line 35
+  %t18 = addr a   ; line 35
+  %t19 = %t18 + 32   ; line 35
+  %t20 = load.d %t19   ; line 35
+  param %t14 : str   ; line 35
+  param %t17 : double   ; line 35
+  param %t20 : double   ; line 35
+  %t21 = call @printf, 3   ; line 35
+  %t22 = addr a   ; line 38
+  %p = %t22   ; line 38
+  %t23 = addr @.str1   ; line 39
+  %t24 = load.d %p   ; line 39
+  %t25 = %p + 24   ; line 39
+  %t26 = load.d %t25   ; line 39
+  %t27 = %p + 16   ; line 39
+  %t28 = load.d %t27   ; line 39
+  param %t23 : str   ; line 39
+  param %t24 : double   ; line 39
+  param %t26 : double   ; line 39
+  param %t28 : double   ; line 39
+  %t29 = call @printf, 4   ; line 39
+  %t30 = %p + 16   ; line 40
+  %p = %t30   ; line 40
+  %t31 = addr @.str2   ; line 41
+  %t32 = load.d %p   ; line 41
+  %t33 = addr a   ; line 41
+  %t34 = %p - %t33   ; line 41
+  %t35 = %t34 / 8   ; line 41
+  param %t31 : str   ; line 41
+  param %t32 : double   ; line 41
+  param %t35 : int   ; line 41
+  %t36 = call @printf, 3   ; line 41
+  %t37 = %p   ; line 42
+  %t38 = %t37 - 8   ; line 42
+  %p = %t38   ; line 42
+  %t39 = addr @.str3   ; line 43
+  %t40 = load.d %p   ; line 43
+  %t41 = addr a   ; line 43
+  %t42 = %t41 + 8   ; line 43
+  %t43 = %p == %t42   ; line 43
+  %t44 = load.d %p   ; line 43
+  %t45 = %p + 8   ; line 43
+  %t46 = load.d %t45   ; line 43
+  %t47 = %t44 <.d %t46   ; line 43
+  param %t39 : str   ; line 43
+  param %t40 : double   ; line 43
+  param %t43 : int   ; line 43
+  param %t47 : int   ; line 43
+  %t48 = call @printf, 4   ; line 43
+  %i = 0   ; line 45
+.L17:
+  %t49 = %i < 4   ; line 45
+  ifFalse %t49 goto .L20   ; line 45
+  %t50 = addr fa   ; line 45
+  %t51 = %i * 4   ; line 45
+  %t52 = %t50 + %t51   ; line 45
+  %t53 = cvt.s.w %i   ; line 45
+  %t54 = addr @.fc2   ; line 45
+  %t55 = load.s %t54   ; line 45
+  %t56 = %t53 +.s %t55   ; line 45
+  store.s %t52, %t56   ; line 45
+  %t57 = %i   ; line 45
+  %t58 = %t57 + 1   ; line 45
+  %i = %t58   ; line 45
+  goto .L17   ; line 45
+.L20:
+  %t59 = addr fa   ; line 46
+  %q = %t59   ; line 46
+  %t60 = addr @.str4   ; line 47
+  %t61 = load.s %q   ; line 47
+  %t62 = cvt.d.s %t61   ; line 47
+  %t63 = %q + 12   ; line 47
+  %t64 = load.s %t63   ; line 47
+  %t65 = cvt.d.s %t64   ; line 47
+  %t66 = addr fa   ; line 47
+  param %t66 : ptr   ; line 47
+  %t67 = call @fmax3, 1   ; line 47
+  %t68 = cvt.d.s %t67   ; line 47
+  param %t60 : str   ; line 47
+  param %t62 : double   ; line 47
+  param %t65 : double   ; line 47
+  param %t68 : double   ; line 47
+  %t69 = call @printf, 4   ; line 47
+  %t70 = %q + 8   ; line 48
+  %q = %t70   ; line 48
+  %t71 = addr @.str5   ; line 49
+  %t72 = load.s %q   ; line 49
+  %t73 = cvt.d.s %t72   ; line 49
+  %t74 = addr fa   ; line 49
+  %t75 = %q - %t74   ; line 49
+  %t76 = %t75 / 4   ; line 49
+  param %t71 : str   ; line 49
+  param %t73 : double   ; line 49
+  param %t76 : int   ; line 49
+  %t77 = call @printf, 3   ; line 49
+  %i = 0   ; line 52
+.L21:
+  %t78 = %i < 3   ; line 52
+  ifFalse %t78 goto .L24   ; line 52
+  %j = 0   ; line 53
+.L25:
+  %t79 = %j < 4   ; line 53
+  ifFalse %t79 goto .L28   ; line 53
+  %t80 = addr m   ; line 54
+  %t81 = %i * 32   ; line 54
+  %t82 = %t80 + %t81   ; line 54
+  %t83 = %j * 8   ; line 54
+  %t84 = %t82 + %t83   ; line 54
+  %t85 = %i * 4   ; line 54
+  %t86 = %t85 + %j   ; line 54
+  %t87 = cvt.d.w %t86   ; line 54
+  %t88 = addr @.fc1   ; line 54
+  %t89 = load.d %t88   ; line 54
+  %t90 = %t87 +.d %t89   ; line 54
+  store.d %t84, %t90   ; line 54
+  %t91 = %j   ; line 53
+  %t92 = %t91 + 1   ; line 53
+  %j = %t92   ; line 53
+  goto .L25   ; line 53
+.L28:
+  %t93 = %i   ; line 52
+  %t94 = %t93 + 1   ; line 52
+  %i = %t94   ; line 52
+  goto .L21   ; line 52
+.L24:
+  %t95 = addr m   ; line 55
+  %t96 = %t95 + 32   ; line 55
+  %t97 = 4   ; line 55
+  %t98 = addr @.fc3   ; line 55
+  %t99 = load.d %t98   ; line 55
+  param %t96 : ptr   ; line 55
+  param %t97 : int   ; line 55
+  param %t99 : double   ; line 55
+  call @scaleRow, 3   ; line 55
+  %i = 0   ; line 56
+.L29:
+  %t100 = %i < 3   ; line 56
+  ifFalse %t100 goto .L32   ; line 56
+  %j = 0   ; line 57
+.L33:
+  %t101 = %j < 4   ; line 57
+  ifFalse %t101 goto .L36   ; line 57
+  %t102 = addr @.str6   ; line 57
+  %t103 = addr m   ; line 57
+  %t104 = %i * 32   ; line 57
+  %t105 = %t103 + %t104   ; line 57
+  %t106 = %j * 8   ; line 57
+  %t107 = %t105 + %t106   ; line 57
+  %t108 = load.d %t107   ; line 57
+  param %t102 : str   ; line 57
+  param %t108 : double   ; line 57
+  %t109 = call @printf, 2   ; line 57
+  %t110 = %j   ; line 57
+  %t111 = %t110 + 1   ; line 57
+  %j = %t111   ; line 57
+  goto .L33   ; line 57
+.L36:
+  %t112 = addr @.str7   ; line 58
+  param %t112 : str   ; line 58
+  %t113 = call @printf, 1   ; line 58
+  %t114 = %i   ; line 56
+  %t115 = %t114 + 1   ; line 56
+  %i = %t115   ; line 56
+  goto .L29   ; line 56
+.L32:
+  %t116 = addr @.str8   ; line 60
+  %t117 = addr m   ; line 60
+  %t118 = %t117 + 0   ; line 60
+  %t119 = 4   ; line 60
+  param %t118 : ptr   ; line 60
+  param %t119 : int   ; line 60
+  %t120 = call @sum, 2   ; line 60
+  %t121 = addr m   ; line 60
+  %t122 = %t121 + 64   ; line 60
+  %t123 = %t122 + 0   ; line 60
+  %t124 = 4   ; line 60
+  param %t123 : ptr   ; line 60
+  param %t124 : int   ; line 60
+  %t125 = call @sum, 2   ; line 60
+  param %t116 : str   ; line 60
+  param %t120 : double   ; line 60
+  param %t125 : double   ; line 60
+  %t126 = call @printf, 3   ; line 60
+  %t127 = addr @.str4   ; line 63
+  %t128 = addr @garr   ; line 63
+  %t129 = %t128 + 0   ; line 63
+  %t130 = load.d %t129   ; line 63
+  %t131 = addr @garr   ; line 63
+  %t132 = %t131 + 8   ; line 63
+  %t133 = load.d %t132   ; line 63
+  %t134 = addr @garr   ; line 63
+  %t135 = %t134 + 16   ; line 63
+  %t136 = load.d %t135   ; line 63
+  param %t127 : str   ; line 63
+  param %t130 : double   ; line 63
+  param %t133 : double   ; line 63
+  param %t136 : double   ; line 63
+  %t137 = call @printf, 4   ; line 63
+  %t138 = addr @.str9   ; line 64
+  %t139 = addr @gfa   ; line 64
+  %t140 = %t139 + 0   ; line 64
+  %t141 = load.s %t140   ; line 64
+  %t142 = cvt.d.s %t141   ; line 64
+  %t143 = addr @gfa   ; line 64
+  %t144 = %t143 + 4   ; line 64
+  %t145 = load.s %t144   ; line 64
+  %t146 = cvt.d.s %t145   ; line 64
+  %t147 = addr @gfa   ; line 65
+  %t148 = %t147 + 8   ; line 65
+  %t149 = load.s %t148   ; line 65
+  %t150 = cvt.d.s %t149   ; line 65
+  %t151 = addr @gfa   ; line 65
+  %t152 = %t151 + 12   ; line 65
+  %t153 = load.s %t152   ; line 65
+  %t154 = cvt.d.s %t153   ; line 65
+  param %t138 : str   ; line 65
+  param %t142 : double   ; line 65
+  param %t146 : double   ; line 65
+  param %t150 : double   ; line 65
+  param %t154 : double   ; line 65
+  %t155 = call @printf, 5   ; line 65
+  %t156 = addr @.str8   ; line 66
+  %t157 = addr @gmat   ; line 66
+  %t158 = %t157 + 0   ; line 66
+  %t159 = %t158 + 8   ; line 66
+  %t160 = load.d %t159   ; line 66
+  %t161 = addr @gmat   ; line 66
+  %t162 = %t161 + 16   ; line 66
+  %t163 = %t162 + 0   ; line 66
+  %t164 = load.d %t163   ; line 66
+  param %t156 : str   ; line 66
+  param %t160 : double   ; line 66
+  param %t164 : double   ; line 66
+  %t165 = call @printf, 3   ; line 66
+  %t166 = addr @.str10   ; line 67
+  %t167 = 40   ; line 67
+  %t168 = 16   ; line 67
+  %t169 = 32   ; line 67
+  param %t166 : str   ; line 67
+  param %t167 : int   ; line 67
+  param %t168 : int   ; line 67
+  param %t169 : int   ; line 67
+  %t170 = call @printf, 4   ; line 67
+  return 0   ; line 68
+end

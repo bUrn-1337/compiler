@@ -1,0 +1,2 @@
+5:9: Semantic: call to undeclared function 'mystery' (first use in this function)
+6:9: Semantic: called object 'v' is not a function or function pointer

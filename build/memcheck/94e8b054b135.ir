@@ -1,0 +1,309 @@
+; Three-address intermediate representation
+; source: test/47_valid_tags.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 10 bytes 37,100,32,37,100,32,37,100,10,0    ; "%d %d %d\n"
+str @.str1 len 4 bytes 37,100,10,0    ; "%d\n"
+str @.str2 len 7 bytes 37,99,32,37,100,10,0    ; "%c %d\n"
+str @.str3 len 13 bytes 37,100,32,37,100,32,37,100,32,37,100,10,0    ; "%d %d %d %d\n"
+str @.str4 len 6 bytes 99,61,37,100,32,0    ; "c=%d "
+str @.str5 len 2 bytes 10,0    ; "\n"
+str @.str6 len 7 bytes 37,100,32,37,100,10,0    ; "%d %d\n"
+global @S_count size 4 align 4 type int ctype "int"
+  init.word 0
+global @.fc0 size 8 align 8 type double ctype "double"
+  init.double 1.5    ; 0x3ff8000000000000
+global @.fc1 size 8 align 8 type double ctype "double"
+  init.double 2.5    ; 0x4004000000000000
+global @.fc2 size 8 align 8 type double ctype "double"
+  init.double 2.75    ; 0x4006000000000000
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @useFwd ret int retctype "int" nparams 1 frame 0 regs 6 temps 5    ; line 19
+  .param 0 f : type ptr ctype "struct Fwd *" size 4 align 4 reg %f
+  .reg %f : type ptr ctype "struct Fwd *"
+  .reg %t3 : type double ctype "double"
+begin
+  %t1 = %f + 8   ; line 19
+  %t2 = load.w %t1   ; line 19
+  %t3 = load.d %f   ; line 19
+  %t4 = trunc.w.d %t3   ; line 19
+  %t5 = %t2 + %t4   ; line 19
+  return %t5   ; line 19
+end
+
+func @shadowTag ret int retctype "int" nparams 0 frame 16 regs 14 temps 14    ; line 21
+  .local inner : type agg ctype "struct S" size 16 align 8 slot 0
+  .reg %t2 : type double ctype "double"
+  .reg %t6 : type double ctype "double"
+  .reg %t8 : type double ctype "double"
+  .reg %t11 : type double ctype "double"
+  .reg %t12 : type double ctype "double"
+begin
+  %t0 = addr inner   ; line 24
+  %t1 = addr @.fc0   ; line 24
+  %t2 = load.d %t1   ; line 24
+  store.d %t0, %t2   ; line 24
+  %t3 = addr inner   ; line 24
+  %t4 = %t3 + 8   ; line 24
+  %t5 = addr @.fc1   ; line 24
+  %t6 = load.d %t5   ; line 24
+  store.d %t4, %t6   ; line 24
+  %t7 = addr inner   ; line 25
+  %t8 = load.d %t7   ; line 25
+  %t9 = addr inner   ; line 25
+  %t10 = %t9 + 8   ; line 25
+  %t11 = load.d %t10   ; line 25
+  %t12 = %t8 +.d %t11   ; line 25
+  %t13 = trunc.w.d %t12   ; line 25
+  return %t13   ; line 25
+end
+
+func @localTag ret int retctype "int" nparams 0 frame 16 regs 18 temps 17    ; line 28
+  .local L : type agg ctype "struct Local" size 8 align 4 slot 0
+  .local pick : type agg ctype "union Pick" size 4 align 4 slot 8
+  .reg %side : type int ctype "enum Side"
+begin
+  %t1 = addr L   ; line 32
+  store.w %t1, 3   ; line 32
+  %t2 = addr L   ; line 32
+  %t3 = %t2 + 4   ; line 32
+  store.w %t3, 4   ; line 32
+  %t4 = addr pick   ; line 33
+  store.w %t4, 0   ; line 33
+  %t5 = addr pick   ; line 33
+  %t6 = %t5 + 0   ; line 33
+  store.b %t6, 1   ; line 33
+  %side = 3   ; line 34
+  %t7 = addr L   ; line 35
+  %t8 = load.w %t7   ; line 35
+  %t9 = addr L   ; line 35
+  %t10 = %t9 + 4   ; line 35
+  %t11 = load.w %t10   ; line 35
+  %t12 = %t8 * %t11   ; line 35
+  %t13 = addr pick   ; line 35
+  %t14 = %t13 + 0   ; line 35
+  %t15 = load.b %t14   ; line 35
+  %t16 = %t12 + %t15   ; line 35
+  %t17 = %t16 + %side   ; line 35
+  return %t17   ; line 35
+end
+
+func @main ret int retctype "int" nparams 0 frame 72 regs 131 temps 128    ; line 38
+  .local outer : type agg ctype "struct S" size 8 align 4 slot 0
+  .local alias : type agg ctype "struct S" size 8 align 4 slot 8
+  .local f : type agg ctype "struct Fwd" size 16 align 8 slot 16
+  .local n1 : type agg ctype "struct List" size 8 align 4 slot 32
+  .local n2 : type agg ctype "struct List" size 8 align 4 slot 40
+  .local u : type agg ctype "union U" size 4 align 4 slot 48
+  .local both : type agg ctype "struct Both" size 16 align 4 slot 52
+  .local t : type agg ctype "struct S" size 1 align 1 slot 68
+  .reg %c : type int ctype "enum Color"
+  .reg %fl : type int ctype "enum Flag"
+  .reg %i : type int ctype "int"
+  .reg %t33 : type double ctype "double"
+begin
+  %t3 = addr outer   ; line 50
+  store.w %t3, 1   ; line 50
+  %t4 = addr outer   ; line 50
+  %t5 = %t4 + 4   ; line 50
+  store.w %t5, 2   ; line 50
+  %t6 = addr alias   ; line 51
+  store.w %t6, 10   ; line 51
+  %t7 = addr alias   ; line 51
+  %t8 = %t7 + 4   ; line 51
+  store.w %t8, 20   ; line 51
+  %t9 = addr @S_count   ; line 52
+  %t10 = addr outer   ; line 52
+  %t11 = load.w %t10   ; line 52
+  %t12 = addr alias   ; line 52
+  %t13 = load.w %t12   ; line 52
+  %t14 = %t11 + %t13   ; line 52
+  store.w %t9, %t14   ; line 52
+  %t15 = addr @.str0   ; line 53
+  %t16 = addr outer   ; line 53
+  %t17 = load.w %t16   ; line 53
+  %t18 = addr outer   ; line 53
+  %t19 = %t18 + 4   ; line 53
+  %t20 = load.w %t19   ; line 53
+  %t21 = %t17 + %t20   ; line 53
+  %t22 = addr alias   ; line 53
+  %t23 = load.w %t22   ; line 53
+  %t24 = addr alias   ; line 53
+  %t25 = %t24 + 4   ; line 53
+  %t26 = load.w %t25   ; line 53
+  %t27 = %t23 + %t26   ; line 53
+  %t28 = addr @S_count   ; line 53
+  %t29 = load.w %t28   ; line 53
+  param %t15 : str   ; line 53
+  param %t21 : int   ; line 53
+  param %t27 : int   ; line 53
+  param %t29 : int   ; line 53
+  %t30 = call @printf, 4   ; line 53
+  %t31 = addr f   ; line 55
+  %t32 = addr @.fc2   ; line 55
+  %t33 = load.d %t32   ; line 55
+  store.d %t31, %t33   ; line 55
+  %t34 = addr f   ; line 55
+  %t35 = %t34 + 8   ; line 55
+  store.w %t35, 4   ; line 55
+  %t36 = addr @.str1   ; line 56
+  %t37 = addr f   ; line 56
+  param %t37 : ptr   ; line 56
+  %t38 = call @useFwd, 1   ; line 56
+  param %t36 : str   ; line 56
+  param %t38 : int   ; line 56
+  %t39 = call @printf, 2   ; line 56
+  %t40 = addr n2   ; line 58
+  store.w %t40, 2   ; line 58
+  %t41 = addr n2   ; line 58
+  %t42 = %t41 + 4   ; line 58
+  store.w %t42, 0   ; line 58
+  %t43 = addr n1   ; line 59
+  store.w %t43, 1   ; line 59
+  %t44 = addr n1   ; line 59
+  %t45 = %t44 + 4   ; line 59
+  %t46 = addr n2   ; line 59
+  store.w %t45, %t46   ; line 59
+  %t47 = addr @.str0   ; line 60
+  %t48 = addr n1   ; line 60
+  %t49 = load.w %t48   ; line 60
+  %t50 = addr n1   ; line 60
+  %t51 = %t50 + 4   ; line 60
+  %t52 = load.w %t51   ; line 60
+  %t53 = load.w %t52   ; line 60
+  %t54 = addr n1   ; line 60
+  %t55 = %t54 + 4   ; line 60
+  %t56 = load.w %t55   ; line 60
+  %t57 = %t56 + 4   ; line 60
+  %t58 = load.w %t57   ; line 60
+  %t59 = %t58 == 0   ; line 60
+  param %t47 : str   ; line 60
+  param %t49 : int   ; line 60
+  param %t53 : int   ; line 60
+  param %t59 : int   ; line 60
+  %t60 = call @printf, 4   ; line 60
+  %t61 = addr u   ; line 62
+  store.w %t61, 0   ; line 62
+  %t62 = addr u   ; line 62
+  store.b %t62, 122   ; line 62
+  %t63 = addr @.str2   ; line 63
+  %t64 = addr u   ; line 63
+  %t65 = load.b %t64   ; line 63
+  %t66 = addr u   ; line 63
+  %t67 = load.w %t66   ; line 63
+  %t68 = %t67 != 0   ; line 63
+  param %t63 : str   ; line 63
+  param %t65 : char   ; line 63
+  param %t68 : int   ; line 63
+  %t69 = call @printf, 3   ; line 63
+  %t70 = addr @.str3   ; line 65
+  %t71 = 0   ; line 65
+  %t72 = 5   ; line 65
+  %t73 = 6   ; line 65
+  %t74 = 100   ; line 65
+  param %t70 : str   ; line 65
+  param %t71 : int   ; line 65
+  param %t72 : int   ; line 65
+  param %t73 : int   ; line 65
+  param %t74 : int   ; line 65
+  %t75 = call @printf, 5   ; line 65
+  %c = 0   ; line 66
+  %i = 0   ; line 66
+.L1:
+  %t76 = %i < 2   ; line 66
+  ifFalse %t76 goto .L4   ; line 66
+  %t77 = addr @.str4   ; line 66
+  param %t77 : str   ; line 66
+  param %c : int   ; line 66
+  %t78 = call @printf, 2   ; line 66
+  %t79 = %i   ; line 66
+  %t80 = %t79 + 1   ; line 66
+  %i = %t80   ; line 66
+  %c = 5   ; line 66
+  goto .L1   ; line 66
+.L4:
+  %t81 = addr @.str5   ; line 67
+  param %t81 : str   ; line 67
+  %t82 = call @printf, 1   ; line 67
+  %fl = 1   ; line 68
+  %t83 = addr @.str0   ; line 69
+  %t84 = 0   ; line 69
+  %t85 = %fl == 1   ; line 69
+  param %t83 : str   ; line 69
+  param %fl : int   ; line 69
+  param %t84 : int   ; line 69
+  param %t85 : int   ; line 69
+  %t86 = call @printf, 4   ; line 69
+  %t87 = addr both   ; line 71
+  store.w %t87, 6   ; line 71
+  %t88 = addr both   ; line 71
+  %t89 = %t88 + 4   ; line 71
+  store.w %t89, 7   ; line 71
+  %t90 = addr both   ; line 71
+  %t91 = %t90 + 8   ; line 71
+  store.w %t91, 8   ; line 71
+  %t92 = addr both   ; line 71
+  %t93 = %t92 + 8   ; line 71
+  %t94 = %t93 + 4   ; line 71
+  store.w %t94, 9   ; line 71
+  %t95 = addr @.str0   ; line 72
+  %t96 = addr both   ; line 72
+  %t97 = load.w %t96   ; line 72
+  %t98 = addr both   ; line 72
+  %t99 = %t98 + 4   ; line 72
+  %t100 = load.w %t99   ; line 72
+  %t101 = addr both   ; line 72
+  %t102 = %t101 + 8   ; line 72
+  %t103 = load.w %t102   ; line 72
+  %t104 = addr both   ; line 72
+  %t105 = %t104 + 8   ; line 72
+  %t106 = %t105 + 4   ; line 72
+  %t107 = load.w %t106   ; line 72
+  %t108 = %t103 + %t107   ; line 72
+  param %t95 : str   ; line 72
+  param %t97 : int   ; line 72
+  param %t100 : int   ; line 72
+  param %t108 : int   ; line 72
+  %t109 = call @printf, 4   ; line 72
+  %t110 = addr @.str6   ; line 74
+  %t111 = call @shadowTag, 0   ; line 74
+  %t112 = call @localTag, 0   ; line 74
+  param %t110 : str   ; line 74
+  param %t111 : int   ; line 74
+  param %t112 : int   ; line 74
+  %t113 = call @printf, 3   ; line 74
+  %t114 = addr @.str0   ; line 75
+  %t115 = 8   ; line 75
+  %t116 = 4   ; line 75
+  %t117 = 4   ; line 76
+  param %t114 : str   ; line 76
+  param %t115 : int   ; line 76
+  param %t116 : int   ; line 76
+  param %t117 : int   ; line 76
+  %t118 = call @printf, 4   ; line 76
+  %t119 = addr t   ; line 82
+  store.b %t119, 113   ; line 82
+  %t120 = addr @.str2   ; line 83
+  %t121 = addr t   ; line 83
+  %t122 = load.b %t121   ; line 83
+  %t123 = 1   ; line 83
+  param %t120 : str   ; line 83
+  param %t122 : char   ; line 83
+  param %t123 : int   ; line 83
+  %t124 = call @printf, 3   ; line 83
+  %t125 = addr @.str6   ; line 85
+  %t126 = 8   ; line 85
+  %t127 = addr outer   ; line 85
+  %t128 = %t127 + 4   ; line 85
+  %t129 = load.w %t128   ; line 85
+  param %t125 : str   ; line 85
+  param %t126 : int   ; line 85
+  param %t129 : int   ; line 85
+  %t130 = call @printf, 3   ; line 85
+  return 0   ; line 86
+end

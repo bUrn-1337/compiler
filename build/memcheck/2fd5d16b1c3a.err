@@ -1,0 +1,11 @@
+Semantic Error [Line 5, Col 17]: member 'me' has incomplete type struct Self
+Semantic Error [Line 15, Col 31]: parameter 1 ('h') has incomplete type
+Semantic Error [Line 17, Col 15]: return type is an incomplete type
+Semantic Error [Line 24]: function 'callHidden' is declared and called but never defined
+Semantic Error [Line 33, Col 19]: variable 'h' has incomplete type struct Hidden
+Semantic Error [Line 36, Col 5]: invalid use of undefined type struct Hidden
+Semantic Error [Line 37, Col 11]: invalid argument passing: struct Q to struct P
+Semantic Error [Line 38, Col 9]: invalid assignment: struct Q to struct P
+Semantic Error [Line 39, Col 11]: invalid argument passing: int to struct P
+
+9 errors found in 'test/errors/e21_struct_incomplete.c'; no assembly written.

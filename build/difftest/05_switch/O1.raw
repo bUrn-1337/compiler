@@ -1,0 +1,18 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+0: other 
+1: one two 
+2: two 
+3: three other 
+4: four-or-five 
+5: four-or-five 
+6: other 
+hit
+probes=1
+sum=4205
+B
+five
+i0 i1 

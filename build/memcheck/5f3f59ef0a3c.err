@@ -1,0 +1,3 @@
+Syntax Error [Line 38, Col 23]: unexpected IDENTIFIER (found 'Re')
+
+1 error found in 'build/malformed/cut3_55_valid_grand_mix.c'; no assembly written.

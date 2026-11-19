@@ -1,0 +1,12 @@
+16:7: Semantic: assignment to a non-lvalue expression
+17:6: Semantic: operand of '++' is not a modifiable lvalue
+18:5: Semantic: operand of '++' is not a modifiable lvalue
+19:5: Semantic: cannot take the address of a non-lvalue expression
+20:13: Semantic: assignment to a non-lvalue expression
+21:9: Semantic: assignment to a non-lvalue expression
+22:8: Semantic: assignment to a non-lvalue expression
+23:9: Semantic: assignment to a non-lvalue expression
+24:13: Semantic: assignment to a non-lvalue expression
+25:9: Semantic: assignment to an expression of array type int [3]
+26:13: Semantic: assignment to a non-lvalue expression
+27:15: Semantic: assignment to a non-lvalue expression

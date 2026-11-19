@@ -1,0 +1,3 @@
+Syntax Error [Line 34, Col 7]: unexpected end of file (found '*')
+
+1 error found in 'build/malformed/cut3_08_pointers.c'; no assembly written.

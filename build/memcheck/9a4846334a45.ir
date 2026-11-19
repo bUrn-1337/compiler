@@ -1,0 +1,486 @@
+; Three-address intermediate representation
+; source: test/65_switch_long.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 6 bytes 118,111,119,101,108,0    ; "vowel"
+str @.str1 len 6 bytes 115,112,97,99,101,0    ; "space"
+str @.str2 len 6 bytes 100,105,103,105,116,0    ; "digit"
+str @.str3 len 10 bytes 99,111,110,115,111,110,97,110,116,0    ; "consonant"
+str @.str4 len 6 bytes 111,116,104,101,114,0    ; "other"
+str @.str5 len 30 bytes 100,101,110,115,101,32,116,111,116,97,108,32,37,100,44,32,100,101,110,115,101,40,49,55,41,61,37,100,10,0    ; "dense total %d, dense(17)=%d\n"
+str @.str6 len 36 bytes 115,112,97,114,115,101,58,32,37,100,32,37,100,32,37,100,32,37,100,32,37,100,32,37,100,32,37,100,32,37,100,32,37,100,10,0    ; "sparse: %d %d %d %d %d %d %d %d %d\n"
+str @.str7 len 12 bytes 104,105,32,52,50,44,32,121,111,117,33,0    ; "hi 42, you!"
+str @.str8 len 7 bytes 37,99,58,37,115,32,0    ; "%c:%s "
+str @.str9 len 2 bytes 10,0    ; "\n"
+str @.str10 len 6 bytes 91,49,44,49,93,0    ; "[1,1]"
+str @.str11 len 2 bytes 46,0    ; "."
+str @.str12 len 5 bytes 40,37,100,41,0    ; "(%d)"
+str @.str13 len 7 bytes 60,37,100,37,100,62,0    ; "<%d%d>"
+str @.str14 len 2 bytes 124,0    ; "|"
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @dense ret int retctype "int" nparams 1 frame 0 regs 41 temps 40    ; line 4
+  .param 0 x : type int ctype "int" size 4 align 4 reg %x
+  .reg %x : type int ctype "int"
+begin
+  %t1 = %x == 0   ; line 6
+  if %t1 goto .L2   ; line 6
+  %t2 = %x == 1   ; line 6
+  if %t2 goto .L3   ; line 6
+  %t3 = %x == 2   ; line 6
+  if %t3 goto .L4   ; line 6
+  %t4 = %x == 3   ; line 6
+  if %t4 goto .L5   ; line 6
+  %t5 = %x == 4   ; line 7
+  if %t5 goto .L6   ; line 7
+  %t6 = %x == 5   ; line 7
+  if %t6 goto .L7   ; line 7
+  %t7 = %x == 6   ; line 7
+  if %t7 goto .L8   ; line 7
+  %t8 = %x == 7   ; line 7
+  if %t8 goto .L9   ; line 7
+  %t9 = %x == 8   ; line 8
+  if %t9 goto .L10   ; line 8
+  %t10 = %x == 9   ; line 8
+  if %t10 goto .L11   ; line 8
+  %t11 = %x == 10   ; line 8
+  if %t11 goto .L12   ; line 8
+  %t12 = %x == 11   ; line 8
+  if %t12 goto .L13   ; line 8
+  %t13 = %x == 12   ; line 9
+  if %t13 goto .L14   ; line 9
+  %t14 = %x == 13   ; line 9
+  if %t14 goto .L15   ; line 9
+  %t15 = %x == 14   ; line 9
+  if %t15 goto .L16   ; line 9
+  %t16 = %x == 15   ; line 9
+  if %t16 goto .L17   ; line 9
+  %t17 = %x == 16   ; line 10
+  if %t17 goto .L18   ; line 10
+  %t18 = %x == 17   ; line 10
+  if %t18 goto .L19   ; line 10
+  %t19 = %x == 18   ; line 10
+  if %t19 goto .L20   ; line 10
+  %t20 = %x == 19   ; line 10
+  if %t20 goto .L21   ; line 10
+  %t21 = %x == 20   ; line 11
+  if %t21 goto .L22   ; line 11
+  %t22 = %x == 21   ; line 11
+  if %t22 goto .L23   ; line 11
+  %t23 = %x == 22   ; line 11
+  if %t23 goto .L24   ; line 11
+  %t24 = %x == 23   ; line 11
+  if %t24 goto .L25   ; line 11
+  %t25 = %x == 24   ; line 12
+  if %t25 goto .L26   ; line 12
+  %t26 = %x == 25   ; line 12
+  if %t26 goto .L27   ; line 12
+  %t27 = %x == 26   ; line 12
+  if %t27 goto .L28   ; line 12
+  %t28 = %x == 27   ; line 12
+  if %t28 goto .L29   ; line 12
+  %t29 = %x == 28   ; line 13
+  if %t29 goto .L30   ; line 13
+  %t30 = %x == 29   ; line 13
+  if %t30 goto .L31   ; line 13
+  %t31 = %x == 30   ; line 13
+  if %t31 goto .L32   ; line 13
+  %t32 = %x == 31   ; line 13
+  if %t32 goto .L33   ; line 13
+  %t33 = %x == 32   ; line 14
+  if %t33 goto .L34   ; line 14
+  %t34 = %x == 33   ; line 14
+  if %t34 goto .L35   ; line 14
+  %t35 = %x == 34   ; line 14
+  if %t35 goto .L36   ; line 14
+  %t36 = %x == 35   ; line 14
+  if %t36 goto .L37   ; line 14
+  %t37 = %x == 36   ; line 15
+  if %t37 goto .L38   ; line 15
+  %t38 = %x == 37   ; line 15
+  if %t38 goto .L39   ; line 15
+  %t39 = %x == 38   ; line 15
+  if %t39 goto .L40   ; line 15
+  %t40 = %x == 39   ; line 15
+  if %t40 goto .L41   ; line 15
+  goto .L1   ; line 5
+.L2:
+  return 100   ; line 6
+.L3:
+  return 101   ; line 6
+.L4:
+  return 104   ; line 6
+.L5:
+  return 109   ; line 6
+.L6:
+  return 116   ; line 7
+.L7:
+  return 125   ; line 7
+.L8:
+  return 136   ; line 7
+.L9:
+  return 149   ; line 7
+.L10:
+  return 164   ; line 8
+.L11:
+  return 181   ; line 8
+.L12:
+  return 200   ; line 8
+.L13:
+  return 221   ; line 8
+.L14:
+  return 244   ; line 9
+.L15:
+  return 269   ; line 9
+.L16:
+  return 296   ; line 9
+.L17:
+  return 325   ; line 9
+.L18:
+  return 356   ; line 10
+.L19:
+  return 389   ; line 10
+.L20:
+  return 424   ; line 10
+.L21:
+  return 461   ; line 10
+.L22:
+  return 500   ; line 11
+.L23:
+  return 541   ; line 11
+.L24:
+  return 584   ; line 11
+.L25:
+  return 629   ; line 11
+.L26:
+  return 676   ; line 12
+.L27:
+  return 725   ; line 12
+.L28:
+  return 776   ; line 12
+.L29:
+  return 829   ; line 12
+.L30:
+  return 884   ; line 13
+.L31:
+  return 941   ; line 13
+.L32:
+  return 1000   ; line 13
+.L33:
+  return 1061   ; line 13
+.L34:
+  return 1124   ; line 14
+.L35:
+  return 1189   ; line 14
+.L36:
+  return 1256   ; line 14
+.L37:
+  return 1325   ; line 14
+.L38:
+  return 1396   ; line 15
+.L39:
+  return 1469   ; line 15
+.L40:
+  return 1544   ; line 15
+.L41:
+  return 1621   ; line 15
+.L1:
+  return -1   ; line 17
+end
+
+func @sparse ret int retctype "int" nparams 1 frame 0 regs 13 temps 11    ; line 20
+  .param 0 x : type int ctype "int" size 4 align 4 reg %x
+  .reg %x : type int ctype "int"
+  .reg %r : type int ctype "int"
+begin
+  %r = 0   ; line 22
+  %t2 = %x == -1000000   ; line 24
+  if %t2 goto .L43   ; line 24
+  %t3 = %x == -5   ; line 25
+  if %t3 goto .L44   ; line 25
+  %t4 = %x == -4   ; line 26
+  if %t4 goto .L45   ; line 26
+  %t5 = %x == 0   ; line 27
+  if %t5 goto .L46   ; line 27
+  %t6 = %x == 7   ; line 29
+  if %t6 goto .L48   ; line 29
+  %t7 = %x == 1048576   ; line 30
+  if %t7 goto .L49   ; line 30
+  %t8 = %x == 2147483647   ; line 31
+  if %t8 goto .L50   ; line 31
+  %t9 = %x == -2147483648   ; line 32
+  if %t9 goto .L51   ; line 32
+  goto .L47   ; line 23
+.L43:
+  %r = 1   ; line 24
+  goto .L42   ; line 24
+.L44:
+  %r = 2   ; line 25
+.L45:
+  %t10 = %r + 3   ; line 26
+  %r = %t10   ; line 26
+.L46:
+  %t11 = %r + 4   ; line 27
+  %r = %t11   ; line 27
+  goto .L42   ; line 27
+.L47:
+  %r = 99   ; line 28
+.L48:
+  %t12 = %r + 5   ; line 29
+  %r = %t12   ; line 29
+  goto .L42   ; line 29
+.L49:
+  %r = 6   ; line 30
+  goto .L42   ; line 30
+.L50:
+  %r = 7   ; line 31
+  goto .L42   ; line 31
+.L51:
+  %r = 8   ; line 32
+.L42:
+  return %r   ; line 34
+end
+
+func @kind ret str retctype "char *" nparams 1 frame 0 regs 26 temps 25    ; line 37
+  .param 0 c : type char ctype "char" size 1 align 1 reg %c
+  .reg %c : type char ctype "char"
+begin
+  %t1 = %c == 97   ; line 39
+  if %t1 goto .L53   ; line 39
+  %t2 = %c == 101   ; line 39
+  if %t2 goto .L54   ; line 39
+  %t3 = %c == 105   ; line 39
+  if %t3 goto .L55   ; line 39
+  %t4 = %c == 111   ; line 39
+  if %t4 goto .L56   ; line 39
+  %t5 = %c == 117   ; line 39
+  if %t5 goto .L57   ; line 39
+  %t6 = %c == 32   ; line 40
+  if %t6 goto .L58   ; line 40
+  %t7 = %c == 9   ; line 40
+  if %t7 goto .L59   ; line 40
+  %t8 = %c == 10   ; line 40
+  if %t8 goto .L60   ; line 40
+  %t9 = %c == 48   ; line 41
+  if %t9 goto .L61   ; line 41
+  %t10 = %c == 49   ; line 41
+  if %t10 goto .L62   ; line 41
+  %t11 = %c == 50   ; line 41
+  if %t11 goto .L63   ; line 41
+  %t12 = %c == 51   ; line 41
+  if %t12 goto .L64   ; line 41
+  %t13 = %c == 52   ; line 41
+  if %t13 goto .L65   ; line 41
+  %t14 = %c == 53   ; line 42
+  if %t14 goto .L66   ; line 42
+  %t15 = %c == 54   ; line 42
+  if %t15 goto .L67   ; line 42
+  %t16 = %c == 55   ; line 42
+  if %t16 goto .L68   ; line 42
+  %t17 = %c == 56   ; line 42
+  if %t17 goto .L69   ; line 42
+  %t18 = %c == 57   ; line 42
+  if %t18 goto .L70   ; line 42
+  goto .L71   ; line 38
+.L53:
+.L54:
+.L55:
+.L56:
+.L57:
+  %t19 = addr @.str0   ; line 39
+  return %t19   ; line 39
+.L58:
+.L59:
+.L60:
+  %t20 = addr @.str1   ; line 40
+  return %t20   ; line 40
+.L61:
+.L62:
+.L63:
+.L64:
+.L65:
+.L66:
+.L67:
+.L68:
+.L69:
+.L70:
+  %t21 = addr @.str2   ; line 42
+  return %t21   ; line 42
+.L71:
+  %t22 = %c >= 97   ; line 44
+  ifFalse %t22 goto .L73   ; line 44
+  %t23 = %c <= 122   ; line 44
+  ifFalse %t23 goto .L73   ; line 44
+  %t24 = addr @.str3   ; line 44
+  return %t24   ; line 44
+.L73:
+  %t25 = addr @.str4   ; line 45
+  return %t25   ; line 45
+  return 0
+end
+
+func @main ret int retctype "int" nparams 0 frame 0 regs 70 temps 66    ; line 49
+  .reg %i : type int ctype "int"
+  .reg %j : type int ctype "int"
+  .reg %t : type int ctype "int"
+  .reg %s : type str ctype "char *"
+begin
+  %t = 0   ; line 52
+  %i = -2   ; line 53
+.L74:
+  %t4 = %i < 42   ; line 53
+  ifFalse %t4 goto .L77   ; line 53
+  param %i : int   ; line 53
+  %t5 = call @dense, 1   ; line 53
+  %t6 = %t + %t5   ; line 53
+  %t = %t6   ; line 53
+  %t7 = %i   ; line 53
+  %t8 = %t7 + 1   ; line 53
+  %i = %t8   ; line 53
+  goto .L74   ; line 53
+.L77:
+  %t9 = addr @.str5   ; line 54
+  %t10 = 17   ; line 54
+  param %t10 : int   ; line 54
+  %t11 = call @dense, 1   ; line 54
+  param %t9 : str   ; line 54
+  param %t : int   ; line 54
+  param %t11 : int   ; line 54
+  %t12 = call @printf, 3   ; line 54
+  %t13 = addr @.str6   ; line 55
+  %t14 = -1000000   ; line 55
+  param %t14 : int   ; line 55
+  %t15 = call @sparse, 1   ; line 55
+  %t16 = -5   ; line 55
+  param %t16 : int   ; line 55
+  %t17 = call @sparse, 1   ; line 55
+  %t18 = -4   ; line 55
+  param %t18 : int   ; line 55
+  %t19 = call @sparse, 1   ; line 55
+  %t20 = 0   ; line 56
+  param %t20 : int   ; line 56
+  %t21 = call @sparse, 1   ; line 56
+  %t22 = 7   ; line 56
+  param %t22 : int   ; line 56
+  %t23 = call @sparse, 1   ; line 56
+  %t24 = 1048576   ; line 56
+  param %t24 : int   ; line 56
+  %t25 = call @sparse, 1   ; line 56
+  %t26 = 2147483647   ; line 56
+  param %t26 : int   ; line 56
+  %t27 = call @sparse, 1   ; line 56
+  %t28 = -2147483648   ; line 56
+  param %t28 : int   ; line 56
+  %t29 = call @sparse, 1   ; line 56
+  %t30 = 3   ; line 56
+  param %t30 : int   ; line 56
+  %t31 = call @sparse, 1   ; line 56
+  param %t13 : str   ; line 56
+  param %t15 : int   ; line 56
+  param %t17 : int   ; line 56
+  param %t19 : int   ; line 56
+  param %t21 : int   ; line 56
+  param %t23 : int   ; line 56
+  param %t25 : int   ; line 56
+  param %t27 : int   ; line 56
+  param %t29 : int   ; line 56
+  param %t31 : int   ; line 56
+  %t32 = call @printf, 10   ; line 56
+  %t33 = addr @.str7   ; line 57
+  %s = %t33   ; line 57
+.L78:
+  %t34 = load.b %s   ; line 57
+  ifFalse %t34 goto .L81   ; line 57
+  %t35 = addr @.str8   ; line 57
+  %t36 = load.b %s   ; line 57
+  %t37 = load.b %s   ; line 57
+  param %t37 : char   ; line 57
+  %t38 = call @kind, 1   ; line 57
+  param %t35 : str   ; line 57
+  param %t36 : char   ; line 57
+  param %t38 : str   ; line 57
+  %t39 = call @printf, 3   ; line 57
+  %t40 = %s   ; line 57
+  %t41 = %t40 + 1   ; line 57
+  %s = %t41   ; line 57
+  goto .L78   ; line 57
+.L81:
+  %t42 = addr @.str9   ; line 58
+  param %t42 : str   ; line 58
+  %t43 = call @printf, 1   ; line 58
+  %i = 0   ; line 59
+.L82:
+  %t44 = %i < 4   ; line 59
+  ifFalse %t44 goto .L85   ; line 59
+  %j = 0   ; line 60
+.L86:
+  %t45 = %j < 4   ; line 60
+  ifFalse %t45 goto .L89   ; line 60
+  %t46 = %i == 0   ; line 62
+  if %t46 goto .L91   ; line 62
+  %t47 = %i == 1   ; line 63
+  if %t47 goto .L92   ; line 63
+  %t48 = %i == 2   ; line 66
+  if %t48 goto .L93   ; line 66
+  goto .L94   ; line 61
+.L91:
+  goto .L88   ; line 62
+.L92:
+  %t49 = %j == 1   ; line 64
+  if %t49 goto .L96   ; line 64
+  goto .L97   ; line 64
+.L96:
+  %t50 = addr @.str10   ; line 64
+  param %t50 : str   ; line 64
+  %t51 = call @printf, 1   ; line 64
+  goto .L95   ; line 64
+.L97:
+  %t52 = addr @.str11   ; line 64
+  param %t52 : str   ; line 64
+  %t53 = call @printf, 1   ; line 64
+.L95:
+  goto .L90   ; line 65
+.L93:
+  %t54 = %j == 2   ; line 67
+  ifFalse %t54 goto .L99   ; line 67
+  goto .L90   ; line 67
+.L99:
+  %t55 = addr @.str12   ; line 68
+  param %t55 : str   ; line 68
+  param %j : int   ; line 68
+  %t56 = call @printf, 2   ; line 68
+  goto .L88   ; line 69
+.L94:
+  %t57 = addr @.str13   ; line 71
+  param %t57 : str   ; line 71
+  param %i : int   ; line 71
+  param %j : int   ; line 71
+  %t58 = call @printf, 3   ; line 71
+.L90:
+  %t59 = addr @.str14   ; line 73
+  param %t59 : str   ; line 73
+  %t60 = call @printf, 1   ; line 73
+.L88:
+  %t61 = %j   ; line 60
+  %t62 = %t61 + 1   ; line 60
+  %j = %t62   ; line 60
+  goto .L86   ; line 60
+.L89:
+  %t63 = addr @.str9   ; line 75
+  param %t63 : str   ; line 75
+  %t64 = call @printf, 1   ; line 75
+  %t65 = %i   ; line 59
+  %t66 = %t65 + 1   ; line 59
+  %i = %t66   ; line 59
+  goto .L82   ; line 59
+.L85:
+  %t67 = 39   ; line 77
+  param %t67 : int   ; line 77
+  %t68 = call @dense, 1   ; line 77
+  %t69 = %t68 % 256   ; line 77
+  return %t69   ; line 77
+end

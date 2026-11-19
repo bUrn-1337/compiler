@@ -1,0 +1,18 @@
+Semantic Error [Line 4, Col 6]: conflicting types for 'g' (previous declaration on line 3)
+Semantic Error [Line 11, Col 12]: 'return' with a value in a function returning void
+Semantic Error [Line 20, Col 9]: undeclared identifier 'undefinedVar' (first use in this function)
+Semantic Error [Line 21, Col 9]: call to undeclared function 'alsoUndefined' (first use in this function)
+Semantic Error [Line 22, Col 9]: function 'takesTwo' expects 2 arguments but 1 was given
+Semantic Error [Line 23, Col 18]: invalid argument passing: struct Point to int
+Semantic Error [Line 24, Col 9]: invalid assignment: int * to int (an explicit cast is required)
+Semantic Error [Line 25, Col 7]: assignment to a non-lvalue expression
+Semantic Error [Line 26, Col 11]: struct Point has no member named 'missing'
+Semantic Error [Line 27, Col 9]: cannot dereference a value of non-pointer type int
+Semantic Error [Line 28, Col 10]: cannot index a value of type int (an array or pointer is required)
+Semantic Error [Line 29, Col 5]: 'continue' outside of a loop statement
+Semantic Error [Line 30, Col 5]: 'case' label not inside a switch statement
+Semantic Error [Line 34, Col 9]: duplicate case value 1
+Semantic Error [Line 36, Col 5]: use of undeclared label 'missingLabel'
+Semantic Error [Line 39, Col 13]: redeclaration of 'x' in the same scope (previous declaration on line 38)
+
+16 errors found in 'test/errors/e17_many_errors.c'; no assembly written.

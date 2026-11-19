@@ -1,0 +1,4 @@
+Semantic Error [Line 5, Col 9]: call to undeclared function 'mystery' (first use in this function)
+Semantic Error [Line 6, Col 9]: called object 'v' is not a function or function pointer
+
+2 errors found in 'test/errors/e07_undeclared_func.c'; no assembly written.

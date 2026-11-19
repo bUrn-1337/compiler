@@ -1,0 +1,29 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+hello literal
+[a	b
+c]
+escapes: a	b\c"d'e
+10 9 92 0
+65 32
+66 B A
+130
+-56
+97 a
+-1
+44
+abc 3
+abcdef 6
+0 1 1
+0 1
+xy
+world
+1
+-----
+source copy
+checksum=532
+desserts
+xyz

@@ -1,0 +1,565 @@
+; Three-address intermediate representation
+; source: test/68_file_roundtrip.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 10 bytes 98,121,116,101,115,46,98,105,110,0    ; "bytes.bin"
+str @.str1 len 2 bytes 119,0    ; "w"
+str @.str2 len 11 bytes 102,99,108,111,115,101,61,37,100,10,0    ; "fclose=%d\n"
+str @.str3 len 2 bytes 114,0    ; "r"
+str @.str4 len 52 bytes 98,121,116,101,115,58,32,110,61,37,100,32,98,97,100,61,37,100,32,115,117,109,61,37,100,32,108,97,115,116,61,37,100,32,102,101,111,102,61,37,100,32,97,103,97,105,110,61,37,100,10,0    ; "bytes: n=%d bad=%d sum=%d last=%d feof=%d again=%d\n"
+str @.str5 len 9 bytes 108,111,110,103,46,116,120,116,0    ; "long.txt"
+str @.str6 len 12 bytes 115,104,111,114,116,32,108,105,110,101,10,0    ; "short line\n"
+str @.str7 len 18 bytes 110,111,32,110,101,119,108,105,110,101,32,97,116,32,101,110,100,0    ; "no newline at end"
+str @.str8 len 39 bytes 108,105,110,101,32,37,100,58,32,108,101,110,32,37,100,32,115,116,97,114,116,115,32,34,37,46,53,115,34,32,101,110,100,115,32,37,100,10,0    ; "line %d: len %d starts \"%.5s\" ends %d\n"
+str @.str9 len 29 bytes 108,105,110,101,115,61,37,100,32,108,111,110,103,101,115,116,61,37,100,32,102,101,111,102,61,37,100,10,0    ; "lines=%d longest=%d feof=%d\n"
+str @.str10 len 22 bytes 97,102,116,101,114,32,114,101,119,105,110,100,32,102,101,111,102,61,37,100,10,0    ; "after rewind feof=%d\n"
+str @.str11 len 20 bytes 102,103,101,116,115,40,56,41,32,112,105,101,99,101,115,61,37,100,10,0    ; "fgets(8) pieces=%d\n"
+str @.str12 len 9 bytes 100,97,116,97,46,116,120,116,0    ; "data.txt"
+str @.str13 len 9 bytes 99,111,112,121,46,116,120,116,0    ; "copy.txt"
+str @.str14 len 16 bytes 37,100,32,37,46,51,102,32,105,116,101,109,37,100,10,0    ; "%d %.3f item%d\n"
+str @.str15 len 5 bytes 60,37,100,62,0    ; "<%d>"
+str @.str16 len 10 bytes 37,100,32,37,108,102,32,37,115,0    ; "%d %lf %s"
+str @.str17 len 17 bytes 114,101,97,100,32,37,100,32,37,46,51,102,32,37,115,10,0    ; "read %d %.3f %s\n"
+str @.str18 len 43 bytes 102,115,99,97,110,102,32,101,110,100,32,110,61,37,100,32,115,117,109,61,37,100,32,116,111,116,97,108,61,37,46,51,102,32,102,101,111,102,61,37,100,10,0    ; "fscanf end n=%d sum=%d total=%.3f feof=%d\n"
+str @.str19 len 2 bytes 97,0    ; "a"
+str @.str20 len 12 bytes 60,97,112,112,101,110,100,101,100,62,10,0    ; "<appended>\n"
+str @.str21 len 9 bytes 99,111,112,121,58,32,37,115,0    ; "copy: %s"
+str @.str22 len 10 bytes 116,104,101,110,58,32,37,100,10,0    ; "then: %d\n"
+str @.str23 len 7 bytes 114,119,46,116,120,116,0    ; "rw.txt"
+str @.str24 len 3 bytes 119,43,0    ; "w+"
+str @.str25 len 7 bytes 49,50,32,51,52,10,0    ; "12 34\n"
+str @.str26 len 6 bytes 37,100,32,37,100,0    ; "%d %d"
+str @.str27 len 20 bytes 119,43,58,32,110,61,37,100,32,120,61,37,100,32,121,61,37,100,10,0    ; "w+: n=%d x=%d y=%d\n"
+str @.str28 len 3 bytes 114,43,0    ; "r+"
+str @.str29 len 14 bytes 114,43,58,32,102,105,114,115,116,61,37,99,10,0    ; "r+: first=%c\n"
+str @.str30 len 12 bytes 109,105,115,115,105,110,103,61,37,100,10,0    ; "missing=%d\n"
+str @.str31 len 17 bytes 110,111,95,115,117,99,104,95,102,105,108,101,46,116,120,116,0    ; "no_such_file.txt"
+str @.str32 len 23 bytes 114,101,109,111,118,101,61,37,100,32,37,100,32,37,100,32,37,100,32,37,100,10,0    ; "remove=%d %d %d %d %d\n"
+str @.str33 len 17 bytes 114,101,109,111,118,101,32,97,103,97,105,110,61,37,100,10,0    ; "remove again=%d\n"
+str @.str34 len 12 bytes 103,111,110,101,61,37,100,32,37,100,10,0    ; "gone=%d %d\n"
+str @.str35 len 8 bytes 114,101,98,111,114,110,10,0    ; "reborn\n"
+str @.str36 len 14 bytes 114,101,99,114,101,97,116,101,100,58,32,37,115,0    ; "recreated: %s"
+global @.fc0 size 8 align 8 type double ctype "double"
+  init.double 4.0    ; 0x4010000000000000
+global @.fc1 size 8 align 8 type double ctype "double"
+  init.double 0.0    ; 0x0000000000000000
+.enddata
+
+extern @fopen ret ptr nparams 2
+extern @fputc ret int nparams 2
+extern @printf ret int nparams 1 variadic
+extern @fclose ret int nparams 1
+extern @fgetc ret int nparams 1
+extern @feof ret int nparams 1
+extern @fputs ret int nparams 2
+extern @fgets ret str nparams 3
+extern @strlen ret int nparams 1
+extern @rewind ret void nparams 1
+extern @fprintf ret int nparams 2 variadic
+extern @fscanf ret int nparams 2 variadic
+extern @remove ret int nparams 1
+
+func @main ret int retctype "int" nparams 0 frame 752 regs 241 temps 231    ; line 7
+  .local line : type str ctype "char [700]" size 700 align 1 slot 0
+  .local word : type str ctype "char [32]" size 32 align 1 slot 700
+  .local x : type int ctype "int" size 4 align 4 slot 732
+  .local y : type int ctype "int" size 4 align 4 slot 736
+  .local d : type double ctype "double" size 8 align 8 slot 744
+  .reg %f : type ptr ctype "struct FILE *"
+  .reg %g : type ptr ctype "struct FILE *"
+  .reg %i : type int ctype "int"
+  .reg %c : type int ctype "int"
+  .reg %n : type int ctype "int"
+  .reg %sum : type int ctype "int"
+  .reg %bad : type int ctype "int"
+  .reg %lines : type int ctype "int"
+  .reg %longest : type int ctype "int"
+  .reg %e : type double ctype "double"
+  .reg %t108 : type double ctype "double"
+  .reg %t110 : type double ctype "double"
+  .reg %t111 : type double ctype "double"
+  .reg %t123 : type double ctype "double"
+  .reg %t134 : type double ctype "double"
+  .reg %t135 : type double ctype "double"
+  .reg %t140 : type double ctype "double"
+begin
+  %t10 = addr @.str0   ; line 14
+  %t11 = addr @.str1   ; line 14
+  param %t10 : str   ; line 14
+  param %t11 : str   ; line 14
+  %t12 = call @fopen, 2   ; line 14
+  %f = %t12   ; line 14
+  %i = 0   ; line 15
+.L1:
+  %t13 = %i < 256   ; line 15
+  ifFalse %t13 goto .L4   ; line 15
+  param %i : int   ; line 15
+  param %f : ptr   ; line 15
+  %t14 = call @fputc, 2   ; line 15
+  %t15 = %i   ; line 15
+  %t16 = %t15 + 1   ; line 15
+  %i = %t16   ; line 15
+  goto .L1   ; line 15
+.L4:
+  %t17 = -1   ; line 16
+  param %t17 : int   ; line 16
+  param %f : ptr   ; line 16
+  %t18 = call @fputc, 2   ; line 16
+  %t19 = addr @.str2   ; line 17
+  param %f : ptr   ; line 17
+  %t20 = call @fclose, 1   ; line 17
+  param %t19 : str   ; line 17
+  param %t20 : int   ; line 17
+  %t21 = call @printf, 2   ; line 17
+  %t22 = addr @.str0   ; line 18
+  %t23 = addr @.str3   ; line 18
+  param %t22 : str   ; line 18
+  param %t23 : str   ; line 18
+  %t24 = call @fopen, 2   ; line 18
+  %f = %t24   ; line 18
+  %n = 0   ; line 19
+  %bad = 0   ; line 19
+  %sum = 0   ; line 19
+.L5:
+  param %f : ptr   ; line 20
+  %t25 = call @fgetc, 1   ; line 20
+  %c = %t25   ; line 20
+  %t26 = %c != -1   ; line 20
+  ifFalse %t26 goto .L7   ; line 20
+  %t27 = %n < 256   ; line 21
+  ifFalse %t27 goto .L9   ; line 21
+  %t28 = %c != %n   ; line 21
+  ifFalse %t28 goto .L9   ; line 21
+  %t29 = %bad   ; line 21
+  %t30 = %t29 + 1   ; line 21
+  %bad = %t30   ; line 21
+.L9:
+  %t31 = %sum + %c   ; line 22
+  %sum = %t31   ; line 22
+  %t32 = %n   ; line 23
+  %t33 = %t32 + 1   ; line 23
+  %n = %t33   ; line 23
+  goto .L5   ; line 23
+.L7:
+  %t34 = addr @.str4   ; line 25
+  param %f : ptr   ; line 25
+  %t35 = call @feof, 1   ; line 25
+  %t36 = %t35 != 0   ; line 25
+  param %f : ptr   ; line 25
+  %t37 = call @fgetc, 1   ; line 25
+  param %t34 : str   ; line 25
+  param %n : int   ; line 25
+  param %bad : int   ; line 25
+  param %sum : int   ; line 25
+  param %c : int   ; line 25
+  param %t36 : int   ; line 25
+  param %t37 : int   ; line 25
+  %t38 = call @printf, 7   ; line 25
+  param %f : ptr   ; line 26
+  %t39 = call @fclose, 1   ; line 26
+  %t40 = addr @.str5   ; line 28
+  %t41 = addr @.str1   ; line 28
+  param %t40 : str   ; line 28
+  param %t41 : str   ; line 28
+  %t42 = call @fopen, 2   ; line 28
+  %f = %t42   ; line 28
+  %i = 0   ; line 29
+.L10:
+  %t43 = %i < 600   ; line 29
+  ifFalse %t43 goto .L13   ; line 29
+  %t44 = %i % 26   ; line 29
+  %t45 = 97 + %t44   ; line 29
+  param %t45 : int   ; line 29
+  param %f : ptr   ; line 29
+  %t46 = call @fputc, 2   ; line 29
+  %t47 = %i   ; line 29
+  %t48 = %t47 + 1   ; line 29
+  %i = %t48   ; line 29
+  goto .L10   ; line 29
+.L13:
+  %t49 = 10   ; line 30
+  param %t49 : int   ; line 30
+  param %f : ptr   ; line 30
+  %t50 = call @fputc, 2   ; line 30
+  %t51 = addr @.str6   ; line 31
+  param %t51 : str   ; line 31
+  param %f : ptr   ; line 31
+  %t52 = call @fputs, 2   ; line 31
+  %t53 = addr @.str7   ; line 32
+  param %t53 : str   ; line 32
+  param %f : ptr   ; line 32
+  %t54 = call @fputs, 2   ; line 32
+  param %f : ptr   ; line 33
+  %t55 = call @fclose, 1   ; line 33
+  %t56 = addr @.str5   ; line 34
+  %t57 = addr @.str3   ; line 34
+  param %t56 : str   ; line 34
+  param %t57 : str   ; line 34
+  %t58 = call @fopen, 2   ; line 34
+  %f = %t58   ; line 34
+  %lines = 0   ; line 35
+  %longest = 0   ; line 35
+.L14:
+  %t59 = addr line   ; line 36
+  %t60 = 700   ; line 36
+  param %t59 : str   ; line 36
+  param %t60 : int   ; line 36
+  param %f : ptr   ; line 36
+  %t61 = call @fgets, 3   ; line 36
+  %t62 = %t61 != 0   ; line 36
+  ifFalse %t62 goto .L16   ; line 36
+  %t63 = %lines   ; line 37
+  %t64 = %t63 + 1   ; line 37
+  %lines = %t64   ; line 37
+  %t65 = addr line   ; line 38
+  param %t65 : str   ; line 38
+  %t66 = call @strlen, 1   ; line 38
+  %t67 = %t66 > %longest   ; line 38
+  ifFalse %t67 goto .L18   ; line 38
+  %t68 = addr line   ; line 38
+  param %t68 : str   ; line 38
+  %t69 = call @strlen, 1   ; line 38
+  %longest = %t69   ; line 38
+.L18:
+  %t70 = addr @.str8   ; line 39
+  %t71 = addr line   ; line 39
+  param %t71 : str   ; line 39
+  %t72 = call @strlen, 1   ; line 39
+  %t73 = addr line   ; line 39
+  %t74 = addr line   ; line 39
+  %t75 = addr line   ; line 39
+  param %t75 : str   ; line 39
+  %t76 = call @strlen, 1   ; line 39
+  %t77 = %t76 - 1   ; line 39
+  %t78 = %t74 + %t77   ; line 39
+  %t79 = load.b %t78   ; line 39
+  param %t70 : str   ; line 39
+  param %lines : int   ; line 39
+  param %t72 : int   ; line 39
+  param %t73 : str   ; line 39
+  param %t79 : char   ; line 39
+  %t80 = call @printf, 5   ; line 39
+  goto .L14   ; line 39
+.L16:
+  %t81 = addr @.str9   ; line 41
+  param %f : ptr   ; line 41
+  %t82 = call @feof, 1   ; line 41
+  %t83 = %t82 != 0   ; line 41
+  param %t81 : str   ; line 41
+  param %lines : int   ; line 41
+  param %longest : int   ; line 41
+  param %t83 : int   ; line 41
+  %t84 = call @printf, 4   ; line 41
+  param %f : ptr   ; line 42
+  call @rewind, 1   ; line 42
+  %t85 = addr @.str10   ; line 43
+  param %f : ptr   ; line 43
+  %t86 = call @feof, 1   ; line 43
+  %t87 = %t86 != 0   ; line 43
+  param %t85 : str   ; line 43
+  param %t87 : int   ; line 43
+  %t88 = call @printf, 2   ; line 43
+  %n = 0   ; line 44
+.L19:
+  %t89 = addr line   ; line 45
+  %t90 = 8   ; line 45
+  param %t89 : str   ; line 45
+  param %t90 : int   ; line 45
+  param %f : ptr   ; line 45
+  %t91 = call @fgets, 3   ; line 45
+  %t92 = %t91 != 0   ; line 45
+  ifFalse %t92 goto .L21   ; line 45
+  %t93 = %n   ; line 45
+  %t94 = %t93 + 1   ; line 45
+  %n = %t94   ; line 45
+  goto .L19   ; line 45
+.L21:
+  %t95 = addr @.str11   ; line 46
+  param %t95 : str   ; line 46
+  param %n : int   ; line 46
+  %t96 = call @printf, 2   ; line 46
+  param %f : ptr   ; line 47
+  %t97 = call @fclose, 1   ; line 47
+  %t98 = addr @.str12   ; line 49
+  %t99 = addr @.str1   ; line 49
+  param %t98 : str   ; line 49
+  param %t99 : str   ; line 49
+  %t100 = call @fopen, 2   ; line 49
+  %f = %t100   ; line 49
+  %t101 = addr @.str13   ; line 50
+  %t102 = addr @.str1   ; line 50
+  param %t101 : str   ; line 50
+  param %t102 : str   ; line 50
+  %t103 = call @fopen, 2   ; line 50
+  %g = %t103   ; line 50
+  %i = 1   ; line 51
+.L22:
+  %t104 = %i <= 5   ; line 51
+  ifFalse %t104 goto .L25   ; line 51
+  %t105 = addr @.str14   ; line 52
+  %t106 = %i * %i   ; line 52
+  %t107 = %t106 - 7   ; line 52
+  %t108 = cvt.d.w %i   ; line 52
+  %t109 = addr @.fc0   ; line 52
+  %t110 = load.d %t109   ; line 52
+  %t111 = %t108 /.d %t110   ; line 52
+  param %f : ptr   ; line 52
+  param %t105 : str   ; line 52
+  param %t107 : int   ; line 52
+  param %t111 : double   ; line 52
+  param %i : int   ; line 52
+  %t112 = call @fprintf, 5   ; line 52
+  %t113 = addr @.str15   ; line 53
+  param %g : ptr   ; line 53
+  param %t113 : str   ; line 53
+  param %i : int   ; line 53
+  %t114 = call @fprintf, 3   ; line 53
+  %t115 = %i   ; line 51
+  %t116 = %t115 + 1   ; line 51
+  %i = %t116   ; line 51
+  goto .L22   ; line 51
+.L25:
+  param %f : ptr   ; line 55
+  %t117 = call @fclose, 1   ; line 55
+  param %g : ptr   ; line 56
+  %t118 = call @fclose, 1   ; line 56
+  %t119 = addr @.str12   ; line 57
+  %t120 = addr @.str3   ; line 57
+  param %t119 : str   ; line 57
+  param %t120 : str   ; line 57
+  %t121 = call @fopen, 2   ; line 57
+  %f = %t121   ; line 57
+  %sum = 0   ; line 58
+  %t122 = addr @.fc1   ; line 58
+  %t123 = load.d %t122   ; line 58
+  %e = %t123   ; line 58
+.L26:
+  %t124 = addr @.str16   ; line 59
+  %t125 = addr x   ; line 59
+  %t126 = addr d   ; line 59
+  %t127 = addr word   ; line 59
+  param %f : ptr   ; line 59
+  param %t124 : str   ; line 59
+  param %t125 : ptr   ; line 59
+  param %t126 : ptr   ; line 59
+  param %t127 : str   ; line 59
+  %t128 = call @fscanf, 5   ; line 59
+  %n = %t128   ; line 59
+  %t129 = %n == 3   ; line 59
+  ifFalse %t129 goto .L28   ; line 59
+  %t130 = addr x   ; line 60
+  %t131 = load.w %t130   ; line 60
+  %t132 = %sum + %t131   ; line 60
+  %sum = %t132   ; line 60
+  %t133 = addr d   ; line 61
+  %t134 = load.d %t133   ; line 61
+  %t135 = %e +.d %t134   ; line 61
+  %e = %t135   ; line 61
+  %t136 = addr @.str17   ; line 62
+  %t137 = addr x   ; line 62
+  %t138 = load.w %t137   ; line 62
+  %t139 = addr d   ; line 62
+  %t140 = load.d %t139   ; line 62
+  %t141 = addr word   ; line 62
+  param %t136 : str   ; line 62
+  param %t138 : int   ; line 62
+  param %t140 : double   ; line 62
+  param %t141 : str   ; line 62
+  %t142 = call @printf, 4   ; line 62
+  goto .L26   ; line 62
+.L28:
+  %t143 = addr @.str18   ; line 64
+  param %f : ptr   ; line 64
+  %t144 = call @feof, 1   ; line 64
+  %t145 = %t144 != 0   ; line 64
+  param %t143 : str   ; line 64
+  param %n : int   ; line 64
+  param %sum : int   ; line 64
+  param %e : double   ; line 64
+  param %t145 : int   ; line 64
+  %t146 = call @printf, 5   ; line 64
+  param %f : ptr   ; line 65
+  %t147 = call @fclose, 1   ; line 65
+  %t148 = addr @.str13   ; line 66
+  %t149 = addr @.str19   ; line 66
+  param %t148 : str   ; line 66
+  param %t149 : str   ; line 66
+  %t150 = call @fopen, 2   ; line 66
+  %g = %t150   ; line 66
+  %t151 = addr @.str20   ; line 67
+  param %t151 : str   ; line 67
+  param %g : ptr   ; line 67
+  %t152 = call @fputs, 2   ; line 67
+  param %g : ptr   ; line 68
+  %t153 = call @fclose, 1   ; line 68
+  %t154 = addr @.str13   ; line 69
+  %t155 = addr @.str3   ; line 69
+  param %t154 : str   ; line 69
+  param %t155 : str   ; line 69
+  %t156 = call @fopen, 2   ; line 69
+  %g = %t156   ; line 69
+  %t157 = addr @.str21   ; line 70
+  %t158 = addr line   ; line 70
+  %t159 = 700   ; line 70
+  param %t158 : str   ; line 70
+  param %t159 : int   ; line 70
+  param %g : ptr   ; line 70
+  %t160 = call @fgets, 3   ; line 70
+  param %t157 : str   ; line 70
+  param %t160 : str   ; line 70
+  %t161 = call @printf, 2   ; line 70
+  %t162 = addr @.str22   ; line 71
+  %t163 = addr line   ; line 71
+  %t164 = 700   ; line 71
+  param %t163 : str   ; line 71
+  param %t164 : int   ; line 71
+  param %g : ptr   ; line 71
+  %t165 = call @fgets, 3   ; line 71
+  %t166 = %t165 == 0   ; line 71
+  param %t162 : str   ; line 71
+  param %t166 : int   ; line 71
+  %t167 = call @printf, 2   ; line 71
+  param %g : ptr   ; line 72
+  %t168 = call @fclose, 1   ; line 72
+  %t169 = addr @.str23   ; line 74
+  %t170 = addr @.str24   ; line 74
+  param %t169 : str   ; line 74
+  param %t170 : str   ; line 74
+  %t171 = call @fopen, 2   ; line 74
+  %f = %t171   ; line 74
+  %t172 = addr @.str25   ; line 75
+  param %t172 : str   ; line 75
+  param %f : ptr   ; line 75
+  %t173 = call @fputs, 2   ; line 75
+  param %f : ptr   ; line 76
+  call @rewind, 1   ; line 76
+  %t174 = addr @.str26   ; line 77
+  %t175 = addr x   ; line 77
+  %t176 = addr y   ; line 77
+  param %f : ptr   ; line 77
+  param %t174 : str   ; line 77
+  param %t175 : ptr   ; line 77
+  param %t176 : ptr   ; line 77
+  %t177 = call @fscanf, 4   ; line 77
+  %n = %t177   ; line 77
+  %t178 = addr @.str27   ; line 78
+  %t179 = addr x   ; line 78
+  %t180 = load.w %t179   ; line 78
+  %t181 = addr y   ; line 78
+  %t182 = load.w %t181   ; line 78
+  param %t178 : str   ; line 78
+  param %n : int   ; line 78
+  param %t180 : int   ; line 78
+  param %t182 : int   ; line 78
+  %t183 = call @printf, 4   ; line 78
+  param %f : ptr   ; line 79
+  %t184 = call @fclose, 1   ; line 79
+  %t185 = addr @.str23   ; line 80
+  %t186 = addr @.str28   ; line 80
+  param %t185 : str   ; line 80
+  param %t186 : str   ; line 80
+  %t187 = call @fopen, 2   ; line 80
+  %f = %t187   ; line 80
+  param %f : ptr   ; line 81
+  %t188 = call @fgetc, 1   ; line 81
+  %c = %t188   ; line 81
+  %t189 = addr @.str29   ; line 82
+  param %t189 : str   ; line 82
+  param %c : int   ; line 82
+  %t190 = call @printf, 2   ; line 82
+  param %f : ptr   ; line 83
+  %t191 = call @fclose, 1   ; line 83
+  %t192 = addr @.str30   ; line 85
+  %t193 = addr @.str31   ; line 85
+  %t194 = addr @.str3   ; line 85
+  param %t193 : str   ; line 85
+  param %t194 : str   ; line 85
+  %t195 = call @fopen, 2   ; line 85
+  %t196 = %t195 == 0   ; line 85
+  param %t192 : str   ; line 85
+  param %t196 : int   ; line 85
+  %t197 = call @printf, 2   ; line 85
+  %t198 = addr @.str32   ; line 86
+  %t199 = addr @.str0   ; line 86
+  param %t199 : str   ; line 86
+  %t200 = call @remove, 1   ; line 86
+  %t201 = addr @.str5   ; line 86
+  param %t201 : str   ; line 86
+  %t202 = call @remove, 1   ; line 86
+  %t203 = addr @.str12   ; line 87
+  param %t203 : str   ; line 87
+  %t204 = call @remove, 1   ; line 87
+  %t205 = addr @.str13   ; line 87
+  param %t205 : str   ; line 87
+  %t206 = call @remove, 1   ; line 87
+  %t207 = addr @.str23   ; line 87
+  param %t207 : str   ; line 87
+  %t208 = call @remove, 1   ; line 87
+  param %t198 : str   ; line 87
+  param %t200 : int   ; line 87
+  param %t202 : int   ; line 87
+  param %t204 : int   ; line 87
+  param %t206 : int   ; line 87
+  param %t208 : int   ; line 87
+  %t209 = call @printf, 6   ; line 87
+  %t210 = addr @.str33   ; line 88
+  %t211 = addr @.str12   ; line 88
+  param %t211 : str   ; line 88
+  %t212 = call @remove, 1   ; line 88
+  param %t210 : str   ; line 88
+  param %t212 : int   ; line 88
+  %t213 = call @printf, 2   ; line 88
+  %t214 = addr @.str34   ; line 89
+  %t215 = addr @.str12   ; line 89
+  %t216 = addr @.str3   ; line 89
+  param %t215 : str   ; line 89
+  param %t216 : str   ; line 89
+  %t217 = call @fopen, 2   ; line 89
+  %t218 = %t217 == 0   ; line 89
+  %t219 = addr @.str0   ; line 89
+  %t220 = addr @.str3   ; line 89
+  param %t219 : str   ; line 89
+  param %t220 : str   ; line 89
+  %t221 = call @fopen, 2   ; line 89
+  %t222 = %t221 == 0   ; line 89
+  param %t214 : str   ; line 89
+  param %t218 : int   ; line 89
+  param %t222 : int   ; line 89
+  %t223 = call @printf, 3   ; line 89
+  %t224 = addr @.str12   ; line 90
+  %t225 = addr @.str1   ; line 90
+  param %t224 : str   ; line 90
+  param %t225 : str   ; line 90
+  %t226 = call @fopen, 2   ; line 90
+  %f = %t226   ; line 90
+  %t227 = addr @.str35   ; line 91
+  param %t227 : str   ; line 91
+  param %f : ptr   ; line 91
+  %t228 = call @fputs, 2   ; line 91
+  param %f : ptr   ; line 92
+  %t229 = call @fclose, 1   ; line 92
+  %t230 = addr @.str12   ; line 93
+  %t231 = addr @.str3   ; line 93
+  param %t230 : str   ; line 93
+  param %t231 : str   ; line 93
+  %t232 = call @fopen, 2   ; line 93
+  %f = %t232   ; line 93
+  %t233 = addr @.str36   ; line 94
+  %t234 = addr line   ; line 94
+  %t235 = 700   ; line 94
+  param %t234 : str   ; line 94
+  param %t235 : int   ; line 94
+  param %f : ptr   ; line 94
+  %t236 = call @fgets, 3   ; line 94
+  param %t233 : str   ; line 94
+  param %t236 : str   ; line 94
+  %t237 = call @printf, 2   ; line 94
+  param %f : ptr   ; line 95
+  %t238 = call @fclose, 1   ; line 95
+  %t239 = addr @.str12   ; line 96
+  param %t239 : str   ; line 96
+  %t240 = call @remove, 1   ; line 96
+  return 0   ; line 97
+end

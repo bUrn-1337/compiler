@@ -1,0 +1,4 @@
+Lexical Error [Line 1, Col 27]: Unterminated string literal -> '"abc'
+Syntax Error [Line 1, Col 28]: unexpected end of file (found '=')
+
+2 errors found in 'build/malformed/unterm_string.c'; no assembly written.

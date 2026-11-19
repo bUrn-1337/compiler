@@ -1,0 +1,4 @@
+Lexical Error [Line 36, Col 16]: Unterminated string literal -> '"99999999999 -99999999999'
+Syntax Error [Line 36, Col 17]: unexpected end of file (found '(')
+
+2 errors found in 'build/malformed/cut2_70_scanf_edges.c'; no assembly written.

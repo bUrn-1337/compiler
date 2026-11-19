@@ -1,0 +1,5 @@
+Semantic Error [Line 10, Col 18]: invalid argument passing: struct S to int
+Semantic Error [Line 11, Col 18]: incompatible pointer types in argument passing: char * to int * (an explicit cast is required)
+Semantic Error [Line 12, Col 18]: invalid argument passing: int to int * (an explicit cast is required)
+
+3 errors found in 'test/errors/e06_arg_type.c'; no assembly written.

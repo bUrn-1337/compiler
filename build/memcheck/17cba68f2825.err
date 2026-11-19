@@ -1,0 +1,4 @@
+Lexical Error [Line 1, Col 29]: Unrecognized character -> ''
+Syntax Error [Line 1, Col 37]: unexpected end of file, expecting IDENTIFIER or MUL_OP (found 'garbage')
+
+2 errors found in 'build/malformed/nul_byte.c'; no assembly written.

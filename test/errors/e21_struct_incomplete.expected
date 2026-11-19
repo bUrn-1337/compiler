@@ -1,0 +1,9 @@
+5:17: Semantic: member 'me' has incomplete type struct Self
+15:31: Semantic: parameter 1 ('h') has incomplete type
+17:15: Semantic: return type is an incomplete type
+24:-: Semantic: function 'callHidden' is declared and called but never defined
+33:19: Semantic: variable 'h' has incomplete type struct Hidden
+36:5: Semantic: invalid use of undefined type struct Hidden
+37:11: Semantic: invalid argument passing: struct Q to struct P
+38:9: Semantic: invalid assignment: struct Q to struct P
+39:11: Semantic: invalid argument passing: int to struct P

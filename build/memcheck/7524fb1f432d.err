@@ -1,0 +1,3 @@
+Syntax Error [Line 57, Col 29]: unexpected end of file, expecting ';' or ',' (found 'Vec3')
+
+1 error found in 'build/malformed/cut2_55_valid_grand_mix.c'; no assembly written.

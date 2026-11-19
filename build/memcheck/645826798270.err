@@ -1,0 +1,6 @@
+Semantic Error [Line 10, Col 9]: cannot dereference a value of non-pointer type int
+Semantic Error [Line 11, Col 9]: cannot dereference a value of non-pointer type char
+Semantic Error [Line 12, Col 9]: cannot dereference a value of non-pointer type struct S
+Semantic Error [Line 13, Col 9]: cannot dereference a value of non-pointer type int
+
+4 errors found in 'test/errors/e14_deref.c'; no assembly written.

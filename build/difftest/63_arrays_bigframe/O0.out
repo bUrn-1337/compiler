@@ -1,0 +1,8 @@
+grid[2][3]=23 trace=66
+flat: 12 34 31
+cube[2][3][4]=4.50 sum=135.00
+local3: 123 12 100 sizeof 96 48 16
+big: 0 99 55 after=12345 dafter=2.5
+deep(3) = 25002
+huge: 300 26997 0.75 d check=27100
+huge from call: 18099

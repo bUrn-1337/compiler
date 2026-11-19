@@ -1,0 +1,3 @@
+Syntax Error [Line 32, Col 24]: unexpected end of file, expecting ';' or ',' (found 'bu')
+
+1 error found in 'build/malformed/cut3_63_arrays_bigframe.c'; no assembly written.

@@ -1,0 +1,525 @@
+; Three-address intermediate representation
+; source: test/52_valid_funcs.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 13 bytes 37,100,32,37,100,32,37,100,32,37,100,10,0    ; "%d %d %d %d\n"
+str @.str1 len 10 bytes 37,100,32,37,100,32,37,100,10,0    ; "%d %d %d\n"
+str @.str2 len 5 bytes 37,100,37,99,0    ; "%d%c"
+str @.str3 len 7 bytes 37,100,32,37,100,10,0    ; "%d %d\n"
+str @.str4 len 4 bytes 37,100,10,0    ; "%d\n"
+str @.str5 len 9 bytes 37,100,32,37,46,51,102,10,0    ; "%d %.3f\n"
+str @.str6 len 10 bytes 37,115,32,37,115,32,37,115,10,0    ; "%s %s %s\n"
+str @.str7 len 5 bytes 122,101,114,111,0    ; "zero"
+str @.str8 len 4 bytes 111,110,101,0    ; "one"
+str @.str9 len 6 bytes 111,116,104,101,114,0    ; "other"
+global @.fc0 size 8 align 8 type double ctype "double"
+  init.double 8.0    ; 0x4020000000000000
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @fact ret int retctype "int" nparams 1 frame 0 regs 6 temps 5    ; line 12
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+begin
+  %t2 = %n <= 1   ; line 12
+  ifFalse %t2 goto .L2   ; line 12
+  %t1 = 1   ; line 12
+  goto .L3   ; line 12
+.L2:
+  %t3 = %n - 1   ; line 12
+  param %t3 : int   ; line 12
+  %t4 = call @fact, 1   ; line 12
+  %t5 = %n * %t4   ; line 12
+  %t1 = %t5   ; line 12
+.L3:
+  return %t1   ; line 12
+end
+
+func @fib ret int retctype "int" nparams 1 frame 0 regs 8 temps 7    ; line 14
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+begin
+  %t2 = %n < 2   ; line 14
+  ifFalse %t2 goto .L5   ; line 14
+  %t1 = %n   ; line 14
+  goto .L6   ; line 14
+.L5:
+  %t3 = %n - 1   ; line 14
+  param %t3 : int   ; line 14
+  %t4 = call @fib, 1   ; line 14
+  %t5 = %n - 2   ; line 14
+  param %t5 : int   ; line 14
+  %t6 = call @fib, 1   ; line 14
+  %t7 = %t4 + %t6   ; line 14
+  %t1 = %t7   ; line 14
+.L6:
+  return %t1   ; line 14
+end
+
+func @ackermannish ret int retctype "int" nparams 2 frame 0 regs 12 temps 10    ; line 16
+  .param 0 m : type int ctype "int" size 4 align 4 reg %m
+  .param 1 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %m : type int ctype "int"
+  .reg %n : type int ctype "int"
+begin
+  %t2 = %m == 0   ; line 17
+  ifFalse %t2 goto .L8   ; line 17
+  %t3 = %n + 1   ; line 17
+  return %t3   ; line 17
+.L8:
+  %t4 = %n == 0   ; line 18
+  ifFalse %t4 goto .L10   ; line 18
+  %t5 = %m - 1   ; line 18
+  %t6 = 1   ; line 18
+  param %t5 : int   ; line 18
+  param %t6 : int   ; line 18
+  %t7 = call @ackermannish, 2   ; line 18
+  return %t7   ; line 18
+.L10:
+  %t8 = %m - 1   ; line 19
+  %t9 = %n - 1   ; line 19
+  param %m : int   ; line 19
+  param %t9 : int   ; line 19
+  %t10 = call @ackermannish, 2   ; line 19
+  param %t8 : int   ; line 19
+  param %t10 : int   ; line 19
+  %t11 = call @ackermannish, 2   ; line 19
+  return %t11   ; line 19
+end
+
+func @many ret int retctype "int" nparams 8 frame 0 regs 22 temps 14    ; line 22
+  .param 0 a : type int ctype "int" size 4 align 4 reg %a
+  .param 1 b : type int ctype "int" size 4 align 4 reg %b
+  .param 2 c : type int ctype "int" size 4 align 4 reg %c
+  .param 3 d : type int ctype "int" size 4 align 4 reg %d
+  .param 4 e : type int ctype "int" size 4 align 4 reg %e
+  .param 5 f : type int ctype "int" size 4 align 4 reg %f
+  .param 6 g : type int ctype "int" size 4 align 4 reg %g
+  .param 7 h : type int ctype "int" size 4 align 4 reg %h
+  .reg %a : type int ctype "int"
+  .reg %b : type int ctype "int"
+  .reg %c : type int ctype "int"
+  .reg %d : type int ctype "int"
+  .reg %e : type int ctype "int"
+  .reg %f : type int ctype "int"
+  .reg %g : type int ctype "int"
+  .reg %h : type int ctype "int"
+begin
+  %t8 = %b * 2   ; line 23
+  %t9 = %a + %t8   ; line 23
+  %t10 = %c * 3   ; line 23
+  %t11 = %t9 + %t10   ; line 23
+  %t12 = %d * 4   ; line 23
+  %t13 = %t11 + %t12   ; line 23
+  %t14 = %e * 5   ; line 23
+  %t15 = %t13 + %t14   ; line 23
+  %t16 = %f * 6   ; line 23
+  %t17 = %t15 + %t16   ; line 23
+  %t18 = %g * 7   ; line 23
+  %t19 = %t17 + %t18   ; line 23
+  %t20 = %h * 8   ; line 23
+  %t21 = %t19 + %t20   ; line 23
+  return %t21   ; line 23
+end
+
+func @ignores ret int retctype "int" nparams 3 frame 0 regs 4 temps 1    ; line 26
+  .param 0 used : type int ctype "int" size 4 align 4 reg %used
+  .param 1 unused1 : type int ctype "int" size 4 align 4 reg %unused1
+  .param 2 unused2 : type char ctype "char" size 1 align 1 reg %unused2
+  .reg %used : type int ctype "int"
+  .reg %unused1 : type int ctype "int"
+  .reg %unused2 : type char ctype "char"
+begin
+  %t3 = %used * 2   ; line 29
+  return %t3   ; line 29
+end
+
+func @nothing ret void retctype "void" nparams 0 frame 0 regs 0 temps 0    ; line 32
+begin
+  return
+end
+
+func @depth ret int retctype "int" nparams 1 frame 0 regs 6 temps 5    ; line 34
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+begin
+  %t2 = %n == 0   ; line 34
+  ifFalse %t2 goto .L12   ; line 34
+  %t1 = 0   ; line 34
+  goto .L13   ; line 34
+.L12:
+  %t3 = %n - 1   ; line 34
+  param %t3 : int   ; line 34
+  %t4 = call @depth, 1   ; line 34
+  %t5 = 1 + %t4   ; line 34
+  %t1 = %t5   ; line 34
+.L13:
+  return %t1   ; line 34
+end
+
+func @main ret int retctype "int" nparams 0 frame 56 regs 125 temps 122    ; line 36
+  .local arr : type ptr ctype "int [6]" size 24 align 4 slot 0
+  .local r : type agg ctype "struct Rec" size 16 align 8 slot 24
+  .local .ret0 : type agg ctype "struct Rec" size 16 align 8 slot 40
+  .reg %big : type ptr ctype "int *"
+  .reg %i : type int ctype "int"
+  .reg %fp : type ptr ctype "int (*)(int)"
+  .reg %t93 : type double ctype "double"
+begin
+  %t3 = addr arr   ; line 43
+  %t4 = %t3 + 0   ; line 43
+  store.w %t4, 3   ; line 43
+  %t5 = addr arr   ; line 43
+  %t6 = %t5 + 4   ; line 43
+  store.w %t6, 19   ; line 43
+  %t7 = addr arr   ; line 43
+  %t8 = %t7 + 8   ; line 43
+  store.w %t8, 7   ; line 43
+  %t9 = addr arr   ; line 43
+  %t10 = %t9 + 12   ; line 43
+  store.w %t10, 42   ; line 43
+  %t11 = addr arr   ; line 43
+  %t12 = %t11 + 16   ; line 43
+  store.w %t12, 11   ; line 43
+  %t13 = addr arr   ; line 43
+  %t14 = %t13 + 20   ; line 43
+  store.w %t14, 8   ; line 43
+  %t15 = addr @.str0   ; line 45
+  %t16 = 1   ; line 45
+  param %t16 : int   ; line 45
+  %t17 = call @fact, 1   ; line 45
+  %t18 = 5   ; line 45
+  param %t18 : int   ; line 45
+  %t19 = call @fact, 1   ; line 45
+  %t20 = 7   ; line 45
+  param %t20 : int   ; line 45
+  %t21 = call @fact, 1   ; line 45
+  %t22 = 10   ; line 45
+  param %t22 : int   ; line 45
+  %t23 = call @fib, 1   ; line 45
+  param %t15 : str   ; line 45
+  param %t17 : int   ; line 45
+  param %t19 : int   ; line 45
+  param %t21 : int   ; line 45
+  param %t23 : int   ; line 45
+  %t24 = call @printf, 5   ; line 45
+  %t25 = addr @.str1   ; line 46
+  %t26 = 1   ; line 46
+  %t27 = 3   ; line 46
+  param %t26 : int   ; line 46
+  param %t27 : int   ; line 46
+  %t28 = call @ackermannish, 2   ; line 46
+  %t29 = 2   ; line 46
+  %t30 = 2   ; line 46
+  param %t29 : int   ; line 46
+  param %t30 : int   ; line 46
+  %t31 = call @ackermannish, 2   ; line 46
+  %t32 = 50   ; line 46
+  param %t32 : int   ; line 46
+  %t33 = call @depth, 1   ; line 46
+  param %t25 : str   ; line 46
+  param %t28 : int   ; line 46
+  param %t31 : int   ; line 46
+  param %t33 : int   ; line 46
+  %t34 = call @printf, 4   ; line 46
+  %i = 0   ; line 47
+.L14:
+  %t35 = %i < 4   ; line 47
+  ifFalse %t35 goto .L17   ; line 47
+  %t36 = addr @.str2   ; line 47
+  param %i : int   ; line 47
+  %t37 = call @isEven, 1   ; line 47
+  %t39 = %i == 3   ; line 47
+  ifFalse %t39 goto .L19   ; line 47
+  %t38 = 10   ; line 47
+  goto .L20   ; line 47
+.L19:
+  %t38 = 32   ; line 47
+.L20:
+  param %t36 : str   ; line 47
+  param %t37 : int   ; line 47
+  param %t38 : int   ; line 47
+  %t40 = call @printf, 3   ; line 47
+  %t41 = %i   ; line 47
+  %t42 = %t41 + 1   ; line 47
+  %i = %t42   ; line 47
+  goto .L14   ; line 47
+.L17:
+  %i = 0   ; line 48
+.L21:
+  %t43 = %i < 4   ; line 48
+  ifFalse %t43 goto .L24   ; line 48
+  %t44 = addr @.str2   ; line 48
+  param %i : int   ; line 48
+  %t45 = call @isOdd, 1   ; line 48
+  %t47 = %i == 3   ; line 48
+  ifFalse %t47 goto .L26   ; line 48
+  %t46 = 10   ; line 48
+  goto .L27   ; line 48
+.L26:
+  %t46 = 32   ; line 48
+.L27:
+  param %t44 : str   ; line 48
+  param %t45 : int   ; line 48
+  param %t46 : int   ; line 48
+  %t48 = call @printf, 3   ; line 48
+  %t49 = %i   ; line 48
+  %t50 = %t49 + 1   ; line 48
+  %i = %t50   ; line 48
+  goto .L21   ; line 48
+.L24:
+  %t51 = addr @.str3   ; line 49
+  %t52 = 1   ; line 49
+  %t53 = 1   ; line 49
+  %t54 = 1   ; line 49
+  %t55 = 1   ; line 49
+  %t56 = 1   ; line 49
+  %t57 = 1   ; line 49
+  %t58 = 1   ; line 49
+  %t59 = 1   ; line 49
+  param %t52 : int   ; line 49
+  param %t53 : int   ; line 49
+  param %t54 : int   ; line 49
+  param %t55 : int   ; line 49
+  param %t56 : int   ; line 49
+  param %t57 : int   ; line 49
+  param %t58 : int   ; line 49
+  param %t59 : int   ; line 49
+  %t60 = call @many, 8   ; line 49
+  %t61 = 21   ; line 49
+  %t62 = 999   ; line 49
+  %t63 = 122   ; line 49
+  param %t61 : int   ; line 49
+  param %t62 : int   ; line 49
+  param %t63 : char   ; line 49
+  %t64 = call @ignores, 3   ; line 49
+  param %t51 : str   ; line 49
+  param %t60 : int   ; line 49
+  param %t64 : int   ; line 49
+  %t65 = call @printf, 3   ; line 49
+  %t66 = addr @.str4   ; line 50
+  %t67 = 5   ; line 50
+  param %t67 : int   ; line 50
+  %t68 = call @helperInBlock, 1   ; line 50
+  param %t66 : str   ; line 50
+  param %t68 : int   ; line 50
+  %t69 = call @printf, 2   ; line 50
+  %t70 = addr arr   ; line 52
+  %t71 = 6   ; line 52
+  param %t70 : ptr   ; line 52
+  param %t71 : int   ; line 52
+  %t72 = call @biggest, 2   ; line 52
+  %big = %t72   ; line 52
+  %t73 = addr @.str3   ; line 53
+  %t74 = load.w %big   ; line 53
+  %t75 = addr arr   ; line 53
+  %t76 = %big - %t75   ; line 53
+  %t77 = %t76 / 4   ; line 53
+  param %t73 : str   ; line 53
+  param %t74 : int   ; line 53
+  param %t77 : int   ; line 53
+  %t78 = call @printf, 3   ; line 53
+  store.w %big, -1   ; line 54
+  %t79 = addr @.str4   ; line 55
+  %t80 = addr arr   ; line 55
+  %t81 = %t80 + 12   ; line 55
+  %t82 = load.w %t81   ; line 55
+  param %t79 : str   ; line 55
+  param %t82 : int   ; line 55
+  %t83 = call @printf, 2   ; line 55
+  %t84 = addr r   ; line 57
+  %t85 = addr .ret0   ; line 57
+  %t86 = 4   ; line 57
+  param %t85 : ptr size 16 align 8 sret   ; line 57
+  param %t86 : int   ; line 57
+  %t87 = call @makeRec, 2   ; line 57
+  blkcopy %t84, %t87, size 16 align 8   ; line 57
+  %t88 = addr @.str5   ; line 58
+  %t89 = addr r   ; line 58
+  %t90 = load.w %t89   ; line 58
+  %t91 = addr r   ; line 58
+  %t92 = %t91 + 8   ; line 58
+  %t93 = load.d %t92   ; line 58
+  param %t88 : str   ; line 58
+  param %t90 : int   ; line 58
+  param %t93 : double   ; line 58
+  %t94 = call @printf, 3   ; line 58
+  %t95 = addr @.str6   ; line 59
+  %t96 = 0   ; line 59
+  param %t96 : int   ; line 59
+  %t97 = call @pickWord, 1   ; line 59
+  %t98 = 1   ; line 59
+  param %t98 : int   ; line 59
+  %t99 = call @pickWord, 1   ; line 59
+  %t100 = 9   ; line 59
+  param %t100 : int   ; line 59
+  %t101 = call @pickWord, 1   ; line 59
+  param %t95 : str   ; line 59
+  param %t97 : str   ; line 59
+  param %t99 : str   ; line 59
+  param %t101 : str   ; line 59
+  %t102 = call @printf, 4   ; line 59
+  %t103 = addr @.str3   ; line 62
+  %t104 = 4   ; line 62
+  param %t104 : int   ; line 62
+  %t105 = call @fact, 1   ; line 62
+  %t106 = 5   ; line 62
+  param %t106 : int   ; line 62
+  %t107 = call @fib, 1   ; line 62
+  param %t107 : int   ; line 62
+  %t108 = call @fact, 1   ; line 62
+  param %t103 : str   ; line 62
+  param %t105 : int   ; line 62
+  param %t108 : int   ; line 62
+  %t109 = call @printf, 3   ; line 62
+  %t110 = addr @.str4   ; line 63
+  %t111 = 3   ; line 63
+  param %t111 : int   ; line 63
+  %t112 = call @fact, 1   ; line 63
+  param %t110 : str   ; line 63
+  param %t112 : int   ; line 63
+  %t113 = call @printf, 2   ; line 63
+  call @nothing, 0   ; line 64
+  %t114 = 1   ; line 65
+  %t115 = 2   ; line 65
+  %t116 = 99   ; line 65
+  param %t114 : int   ; line 65
+  param %t115 : int   ; line 65
+  param %t116 : char   ; line 65
+  %t117 = call @ignores, 3   ; line 65
+  %t118 = faddr @isEven   ; line 69
+  %fp = %t118   ; line 69
+  %t119 = addr @.str3   ; line 70
+  %t120 = 8   ; line 70
+  param %t120 : int   ; line 70
+  %t121 = call %fp, 1   ; line 70
+  %t122 = 9   ; line 70
+  param %t122 : int   ; line 70
+  %t123 = call %fp, 1   ; line 70
+  param %t119 : str   ; line 70
+  param %t121 : int   ; line 70
+  param %t123 : int   ; line 70
+  %t124 = call @printf, 3   ; line 70
+  return 0   ; line 72
+end
+
+func @isEven ret int retctype "int" nparams 1 frame 0 regs 5 temps 4    ; line 5
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+begin
+  %t2 = %n == 0   ; line 75
+  ifFalse %t2 goto .L29   ; line 75
+  %t1 = 1   ; line 75
+  goto .L30   ; line 75
+.L29:
+  %t3 = %n - 1   ; line 75
+  param %t3 : int   ; line 75
+  %t4 = call @isOdd, 1   ; line 75
+  %t1 = %t4   ; line 75
+.L30:
+  return %t1   ; line 75
+end
+
+func @isOdd ret int retctype "int" nparams 1 frame 0 regs 5 temps 4    ; line 6
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+begin
+  %t2 = %n == 0   ; line 76
+  ifFalse %t2 goto .L32   ; line 76
+  %t1 = 0   ; line 76
+  goto .L33   ; line 76
+.L32:
+  %t3 = %n - 1   ; line 76
+  param %t3 : int   ; line 76
+  %t4 = call @isEven, 1   ; line 76
+  %t1 = %t4   ; line 76
+.L33:
+  return %t1   ; line 76
+end
+
+func @helperInBlock ret int retctype "int" nparams 1 frame 0 regs 2 temps 1    ; line 78
+  .param 0 v : type int ctype "int" size 4 align 4 reg %v
+  .reg %v : type int ctype "int"
+begin
+  %t1 = %v * 100   ; line 78
+  return %t1   ; line 78
+end
+
+func @makeRec ret agg retctype "struct Rec" retsize 16 retalign 8 sret nparams 2 frame 16 regs 10 temps 8    ; line 8
+  .param 0 sret.ptr : type ptr ctype "struct Rec *" size 4 align 4 reg %sret.ptr sret
+  .param 1 n : type int ctype "int" size 4 align 4 reg %n
+  .local r : type agg ctype "struct Rec" size 16 align 8 slot 0
+  .reg %sret.ptr : type ptr ctype "struct Rec *"
+  .reg %n : type int ctype "int"
+  .reg %t5 : type double ctype "double"
+  .reg %t7 : type double ctype "double"
+  .reg %t8 : type double ctype "double"
+begin
+  %t2 = addr r   ; line 82
+  store.w %t2, %n   ; line 82
+  %t3 = addr r   ; line 83
+  %t4 = %t3 + 8   ; line 83
+  %t5 = cvt.d.w %n   ; line 83
+  %t6 = addr @.fc0   ; line 83
+  %t7 = load.d %t6   ; line 83
+  %t8 = %t5 /.d %t7   ; line 83
+  store.d %t4, %t8   ; line 83
+  %t9 = addr r   ; line 84
+  blkcopy %sret.ptr, %t9, size 16 align 8   ; line 84
+  return %sret.ptr   ; line 84
+end
+
+func @pickWord ret str retctype "char *" nparams 1 frame 0 regs 6 temps 5    ; line 9
+  .param 0 i : type int ctype "int" size 4 align 4 reg %i
+  .reg %i : type int ctype "int"
+begin
+  %t1 = %i == 0   ; line 89
+  if %t1 goto .L35   ; line 89
+  %t2 = %i == 1   ; line 90
+  if %t2 goto .L36   ; line 90
+  goto .L37   ; line 88
+.L35:
+  %t3 = addr @.str7   ; line 89
+  return %t3   ; line 89
+.L36:
+  %t4 = addr @.str8   ; line 90
+  return %t4   ; line 90
+.L37:
+  %t5 = addr @.str9   ; line 91
+  return %t5   ; line 91
+  return 0
+end
+
+func @biggest ret ptr retctype "int *" nparams 2 frame 0 regs 14 temps 10    ; line 10
+  .param 0 a : type ptr ctype "int *" size 4 align 4 reg %a
+  .param 1 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %a : type ptr ctype "int *"
+  .reg %n : type int ctype "int"
+  .reg %best : type ptr ctype "int *"
+  .reg %i : type int ctype "int"
+begin
+  %best = %a   ; line 96
+  %i = 1   ; line 98
+.L38:
+  %t4 = %i < %n   ; line 98
+  ifFalse %t4 goto .L41   ; line 98
+  %t5 = %i * 4   ; line 98
+  %t6 = %a + %t5   ; line 98
+  %t7 = load.w %t6   ; line 98
+  %t8 = load.w %best   ; line 98
+  %t9 = %t7 > %t8   ; line 98
+  ifFalse %t9 goto .L43   ; line 98
+  %t10 = %i * 4   ; line 98
+  %t11 = %a + %t10   ; line 98
+  %best = %t11   ; line 98
+.L43:
+  %t12 = %i   ; line 98
+  %t13 = %t12 + 1   ; line 98
+  %i = %t13   ; line 98
+  goto .L38   ; line 98
+.L41:
+  return %best   ; line 99
+end

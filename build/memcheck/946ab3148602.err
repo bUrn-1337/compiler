@@ -1,0 +1,3 @@
+Syntax Error [Line 1, Col 10012]: memory exhausted (found '{')
+
+1 error found in 'build/malformed/deep_blocks_over.c'; no assembly written.

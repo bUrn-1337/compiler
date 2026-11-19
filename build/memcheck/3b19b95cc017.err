@@ -1,0 +1,3 @@
+Syntax Error [Line 26, Col 10]: unexpected IDENTIFIER, expecting ')' (found 'vo')
+
+1 error found in 'build/malformed/cut2_69_mnemonic_names.c'; no assembly written.

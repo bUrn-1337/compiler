@@ -1,0 +1,8 @@
+Semantic Error [Line 13, Col 10]: struct Point has no member named 'z'
+Semantic Error [Line 15, Col 11]: struct Point has no member named 'w'
+Semantic Error [Line 16, Col 10]: union U has no member named 'missing'
+Semantic Error [Line 17, Col 10]: '.' applied to int, which is not a struct or union
+Semantic Error [Line 18, Col 10]: '->' applied to non-pointer type struct Point
+Semantic Error [Line 19, Col 11]: '.' applied to struct Point *, which is not a struct or union; did you mean to use '->'?
+
+6 errors found in 'test/errors/e13_member.c'; no assembly written.

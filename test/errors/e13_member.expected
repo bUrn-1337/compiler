@@ -1,0 +1,6 @@
+13:10: Semantic: struct Point has no member named 'z'
+15:11: Semantic: struct Point has no member named 'w'
+16:10: Semantic: union U has no member named 'missing'
+17:10: Semantic: '.' applied to int, which is not a struct or union
+18:10: Semantic: '->' applied to non-pointer type struct Point
+19:11: Semantic: '.' applied to struct Point *, which is not a struct or union; did you mean to use '->'?

@@ -1,0 +1,12 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+dense total 24536, dense(17)=389
+sparse: 1 9 7 4 5 6 7 8 104
+h:consonant i:vowel  :space 4:digit 2:digit ,:other  :space y:consonant o:vowel u:vowel !:other 
+
+.|[1,1]|.|.|
+(0)(1)|(3)
+<30>|<31>|<32>|<33>|

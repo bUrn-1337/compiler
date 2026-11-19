@@ -1,0 +1,14 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+x=  0.00  n=    2.000000  h=    2.000000  d=   -3.000000
+x=  1.00  n=    0.500000  h=    0.500000  d=    1.000000
+x=  2.50  n=   13.250000  h=   13.250000  d=   18.250000
+x= -1.50  n=    4.250000  h=    4.250000  d=    2.250000
+agree=1 fd_ok=1
+agree=1 fd_ok=1
+agree=1 fd_ok=1
+agree=1 fd_ok=1
+root=-2.23891659 value=1

@@ -1,0 +1,8 @@
+16:9: Semantic: called object 'i' is not a function or function pointer
+17:9: Semantic: called object 'p' is not a function or function pointer
+18:9: Semantic: called object 's' is not a function or function pointer
+19:9: Semantic: function 'fp' expects 2 arguments but 1 was given
+20:9: Semantic: function 'fp' expects 2 arguments but 3 were given
+21:12: Semantic: invalid argument passing: int * to int (an explicit cast is required)
+22:15: Semantic: invalid argument passing: int * to int (an explicit cast is required)
+23:12: Semantic: invalid argument passing: int * to double (there is no conversion between a floating-point type and a pointer)

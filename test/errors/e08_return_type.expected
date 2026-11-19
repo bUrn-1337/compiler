@@ -1,0 +1,4 @@
+5:12: Semantic: 'return' with a value in a function returning void
+9:5: Semantic: 'return' with no value in a function returning int
+14:12: Semantic: invalid return: struct S to int
+19:12: Semantic: incompatible pointer types in return: char * to int * (an explicit cast is required)

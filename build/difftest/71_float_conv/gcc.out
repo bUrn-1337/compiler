@@ -1,0 +1,23 @@
+trunc: 2 -2 0 0 2147483647 -2147483648
+to double: 2147483647.0 -2147483648.0 -7.0 -56.0
+char 200: -56 -56.0 -56
+double->char: 65 A
+double->char neg: -1
+0.1 float 0.10000000149011612 double 0.10000000000000001 equal 0
+float 2^24+1 = 16777216.0, double 16777217.0
+float 1/3 0.3333333433, x3 1.0000000000, half 0.1666666716
+dmix 71.750000
+fsum 4.5
+acc 1.0000000000000007
+grow 18384234358.966511
+ops 3.1250 7.5000 -3.1250
+nan: 0 1 0 0 0 0
+nan is true
+-0: 1 0 1 -inf
+-0 is false
+overflow inf -inf
+underflow 9.99999e-319
+ternary 7.00 0.50
+int div vs fp: 3 3.5000 3.5000
+cmp: 0 1 1
+sizes 4 8

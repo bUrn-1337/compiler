@@ -1,0 +1,203 @@
+; Three-address intermediate representation
+; source: test/58_fib_ackermann.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 26 bytes 102,105,98,40,50,53,41,32,61,32,37,100,32,105,110,32,37,100,32,99,97,108,108,115,10,0    ; "fib(25) = %d in %d calls\n"
+str @.str1 len 4 bytes 37,54,100,0    ; "%6d"
+str @.str2 len 2 bytes 10,0    ; "\n"
+str @.str3 len 15 bytes 97,99,107,40,51,44,53,41,32,61,32,37,100,10,0    ; "ack(3,5) = %d\n"
+str @.str4 len 32 bytes 105,115,95,101,118,101,110,40,53,48,49,41,61,37,100,32,105,115,95,111,100,100,40,53,48,49,41,61,37,100,10,0    ; "is_even(501)=%d is_odd(501)=%d\n"
+str @.str5 len 17 bytes 100,102,105,98,40,50,48,41,32,61,32,37,46,49,102,10,0    ; "dfib(20) = %.1f\n"
+global @calls size 4 align 4 type int ctype "int"
+  init.zero 4
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @fib ret int retctype "int" nparams 1 frame 0 regs 11 temps 10    ; line 5
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+begin
+  %t1 = addr @calls   ; line 6
+  %t2 = load.w %t1   ; line 6
+  %t3 = %t2   ; line 6
+  %t4 = %t3 + 1   ; line 6
+  store.w %t1, %t4   ; line 6
+  %t5 = %n < 2   ; line 7
+  ifFalse %t5 goto .L2   ; line 7
+  return %n   ; line 7
+.L2:
+  %t6 = %n - 1   ; line 8
+  param %t6 : int   ; line 8
+  %t7 = call @fib, 1   ; line 8
+  %t8 = %n - 2   ; line 8
+  param %t8 : int   ; line 8
+  %t9 = call @fib, 1   ; line 8
+  %t10 = %t7 + %t9   ; line 8
+  return %t10   ; line 8
+end
+
+func @ack ret int retctype "int" nparams 2 frame 0 regs 12 temps 10    ; line 11
+  .param 0 m : type int ctype "int" size 4 align 4 reg %m
+  .param 1 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %m : type int ctype "int"
+  .reg %n : type int ctype "int"
+begin
+  %t2 = %m == 0   ; line 12
+  ifFalse %t2 goto .L4   ; line 12
+  %t3 = %n + 1   ; line 12
+  return %t3   ; line 12
+.L4:
+  %t4 = %n == 0   ; line 13
+  ifFalse %t4 goto .L6   ; line 13
+  %t5 = %m - 1   ; line 13
+  %t6 = 1   ; line 13
+  param %t5 : int   ; line 13
+  param %t6 : int   ; line 13
+  %t7 = call @ack, 2   ; line 13
+  return %t7   ; line 13
+.L6:
+  %t8 = %m - 1   ; line 14
+  %t9 = %n - 1   ; line 14
+  param %m : int   ; line 14
+  param %t9 : int   ; line 14
+  %t10 = call @ack, 2   ; line 14
+  param %t8 : int   ; line 14
+  param %t10 : int   ; line 14
+  %t11 = call @ack, 2   ; line 14
+  return %t11   ; line 14
+end
+
+func @is_even ret int retctype "int" nparams 1 frame 0 regs 4 temps 3    ; line 19
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+begin
+  %t1 = %n == 0   ; line 19
+  ifFalse %t1 goto .L8   ; line 19
+  return 1   ; line 19
+.L8:
+  %t2 = %n - 1   ; line 19
+  param %t2 : int   ; line 19
+  %t3 = call @is_odd, 1   ; line 19
+  return %t3   ; line 19
+end
+
+func @is_odd ret int retctype "int" nparams 1 frame 0 regs 4 temps 3    ; line 18
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+begin
+  %t1 = %n == 0   ; line 20
+  ifFalse %t1 goto .L10   ; line 20
+  return 0   ; line 20
+.L10:
+  %t2 = %n - 1   ; line 20
+  param %t2 : int   ; line 20
+  %t3 = call @is_even, 1   ; line 20
+  return %t3   ; line 20
+end
+
+func @dfib ret double retctype "double" nparams 1 frame 0 regs 8 temps 7    ; line 22
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+  .reg %t2 : type double ctype "double"
+  .reg %t4 : type double ctype "double"
+  .reg %t6 : type double ctype "double"
+  .reg %t7 : type double ctype "double"
+begin
+  %t1 = %n < 2   ; line 23
+  ifFalse %t1 goto .L12   ; line 23
+  %t2 = cvt.d.w %n   ; line 23
+  return %t2   ; line 23
+.L12:
+  %t3 = %n - 1   ; line 24
+  param %t3 : int   ; line 24
+  %t4 = call @dfib, 1   ; line 24
+  %t5 = %n - 2   ; line 24
+  param %t5 : int   ; line 24
+  %t6 = call @dfib, 1   ; line 24
+  %t7 = %t4 +.d %t6   ; line 24
+  return %t7   ; line 24
+end
+
+func @main ret int retctype "int" nparams 0 frame 0 regs 39 temps 36    ; line 27
+  .reg %m : type int ctype "int"
+  .reg %n : type int ctype "int"
+  .reg %f : type int ctype "int"
+  .reg %t34 : type double ctype "double"
+begin
+  %t3 = addr @calls   ; line 29
+  store.w %t3, 0   ; line 29
+  %t4 = 25   ; line 30
+  param %t4 : int   ; line 30
+  %t5 = call @fib, 1   ; line 30
+  %f = %t5   ; line 30
+  %t6 = addr @.str0   ; line 31
+  %t7 = addr @calls   ; line 31
+  %t8 = load.w %t7   ; line 31
+  param %t6 : str   ; line 31
+  param %f : int   ; line 31
+  param %t8 : int   ; line 31
+  %t9 = call @printf, 3   ; line 31
+  %m = 0   ; line 32
+.L13:
+  %t10 = %m <= 3   ; line 32
+  ifFalse %t10 goto .L16   ; line 32
+  %n = 0   ; line 33
+.L17:
+  %t11 = %n <= 4   ; line 33
+  ifFalse %t11 goto .L20   ; line 33
+  %t12 = addr @.str1   ; line 33
+  param %m : int   ; line 33
+  param %n : int   ; line 33
+  %t13 = call @ack, 2   ; line 33
+  param %t12 : str   ; line 33
+  param %t13 : int   ; line 33
+  %t14 = call @printf, 2   ; line 33
+  %t15 = %n   ; line 33
+  %t16 = %t15 + 1   ; line 33
+  %n = %t16   ; line 33
+  goto .L17   ; line 33
+.L20:
+  %t17 = addr @.str2   ; line 34
+  param %t17 : str   ; line 34
+  %t18 = call @printf, 1   ; line 34
+  %t19 = %m   ; line 32
+  %t20 = %t19 + 1   ; line 32
+  %m = %t20   ; line 32
+  goto .L13   ; line 32
+.L16:
+  %t21 = addr @.str3   ; line 36
+  %t22 = 3   ; line 36
+  %t23 = 5   ; line 36
+  param %t22 : int   ; line 36
+  param %t23 : int   ; line 36
+  %t24 = call @ack, 2   ; line 36
+  param %t21 : str   ; line 36
+  param %t24 : int   ; line 36
+  %t25 = call @printf, 2   ; line 36
+  %t26 = addr @.str4   ; line 37
+  %t27 = 501   ; line 37
+  param %t27 : int   ; line 37
+  %t28 = call @is_even, 1   ; line 37
+  %t29 = 501   ; line 37
+  param %t29 : int   ; line 37
+  %t30 = call @is_odd, 1   ; line 37
+  param %t26 : str   ; line 37
+  param %t28 : int   ; line 37
+  param %t30 : int   ; line 37
+  %t31 = call @printf, 3   ; line 37
+  %t32 = addr @.str5   ; line 38
+  %t33 = 20   ; line 38
+  param %t33 : int   ; line 38
+  %t34 = call @dfib, 1   ; line 38
+  param %t32 : str   ; line 38
+  param %t34 : double   ; line 38
+  %t35 = call @printf, 2   ; line 38
+  %t36 = 10   ; line 39
+  param %t36 : int   ; line 39
+  %t37 = call @fib, 1   ; line 39
+  %t38 = %t37 % 256   ; line 39
+  return %t38   ; line 39
+end

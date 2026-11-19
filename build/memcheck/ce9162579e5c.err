@@ -1,0 +1,8 @@
+Syntax Error [Line 1, Col 15]: unexpected ADD_OP, expecting IDENTIFIER or MUL_OP (found '+')
+Lexical Error [Line 1, Col 52]: Invalid identifier (cannot start with a digit) -> '9BMkyI'
+Lexical Error [Line 3, Col 7]: Invalid identifier (cannot start with a digit) -> '4mKv8zWynHSDZ1'
+Lexical Error [Line 4, Col 7]: Invalid identifier (cannot start with a digit) -> '08lVxkegeKCj2i5AlPb9STQWtbBpfmv3AD6vLCr0lxmKja2NRL3qugT56SfmUqWiyR5nal'
+Lexical Error [Line 5, Col 70]: Invalid identifier (cannot start with a digit) -> '7hUAmYM'
+Lexical Error [Line 7, Col 1]: Invalid identifier (cannot start with a digit) -> '71tteLMgb5EX89enurGMyIQAx0rDpJbJYZq42r8ODQOpARLLvA2PrgaevNGtncue7TnRr0uIq7Mz'
+
+6 errors found in 'build/malformed/random_text.c'; no assembly written.

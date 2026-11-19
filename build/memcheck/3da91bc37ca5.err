@@ -1,0 +1,3 @@
+Syntax Error [Line 10, Col 10]: unexpected IDENTIFIER, expecting ')' (found 'v')
+
+1 error found in 'build/malformed/cut3_03_ifelse.c'; no assembly written.

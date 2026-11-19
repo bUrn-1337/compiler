@@ -1,0 +1,1015 @@
+; Three-address intermediate representation
+; source: test/73_escapes_globals.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 12 bytes 7,8,12,10,13,9,11,92,39,34,63,0    ; "\007\010\014\n\r\t\013\\'\"?"
+str @.str1 len 9 bytes 65,66,67,0,48,7,127,255,0    ; "ABC\0000\007\177\377"
+str @.str2 len 7 bytes 65,122,48,0,255,127,0    ; "Az0\000\377\177"
+str @.str3 len 47 bytes 35,32,110,111,116,32,97,32,99,111,109,109,101,110,116,58,32,46,97,115,99,105,105,122,32,34,120,34,32,36,116,48,32,109,97,105,110,58,32,115,121,115,99,97,108,108,0    ; "# not a comment: .asciiz \"x\" $t0 main: syscall"
+str @.str4 len 21 bytes 112,111,105,110,116,101,114,32,116,111,32,97,32,108,105,116,101,114,97,108,0    ; "pointer to a literal"
+str @.str5 len 4 bytes 97,98,99,0    ; "abc"
+str @.str6 len 4 bytes 37,115,58,0    ; "%s:"
+str @.str7 len 4 bytes 32,37,100,0    ; " %d"
+str @.str8 len 2 bytes 10,0    ; "\n"
+str @.str9 len 281 bytes 48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,48,49,50,51,52,53,54,55,56,57,0    ; "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
+str @.str10 len 4 bytes 101,115,99,0    ; "esc"
+str @.str11 len 4 bytes 111,99,116,0    ; "oct"
+str @.str12 len 4 bytes 104,101,120,0    ; "hex"
+str @.str13 len 22 bytes 37,100,32,37,100,32,37,100,32,37,100,32,37,100,32,37,100,32,37,100,10,0    ; "%d %d %d %d %d %d %d\n"
+str @.str14 len 7 bytes 37,115,124,37,100,10,0    ; "%s|%d\n"
+str @.str15 len 10 bytes 37,115,124,37,115,124,37,115,10,0    ; "%s|%s|%s\n"
+str @.str16 len 9 bytes 116,97,98,9,104,101,114,101,0    ; "tab\there"
+str @.str17 len 9 bytes 113,117,111,116,101,34,105,110,0    ; "quote\"in"
+str @.str18 len 11 bytes 98,97,99,107,92,115,108,97,115,104,0    ; "back\\slash"
+str @.str19 len 18 bytes 49,48,48,37,37,32,115,117,114,101,44,32,34,37,115,34,10,0    ; "100%% sure, \"%s\"\n"
+str @.str20 len 4 bytes 121,101,115,0    ; "yes"
+str @.str21 len 7 bytes 37,100,32,37,100,10,0    ; "%d %d\n"
+str @.str22 len 6 bytes 97,98,0,99,100,0    ; "ab\000cd"
+str @.str23 len 14 bytes 37,115,32,47,32,37,115,32,47,32,37,99,10,0    ; "%s / %s / %c\n"
+str @.str24 len 13 bytes 122,101,114,111,32,115,117,109,32,37,100,10,0    ; "zero sum %d\n"
+str @.str25 len 16 bytes 37,103,32,37,103,32,37,103,32,37,103,32,37,103,10,0    ; "%g %g %g %g %g\n"
+str @.str26 len 13 bytes 37,100,32,37,100,32,37,100,32,37,100,10,0    ; "%d %d %d %d\n"
+str @.str27 len 15 bytes 37,100,32,37,115,32,37,100,32,37,46,57,115,10,0    ; "%d %s %d %.9s\n"
+str @.str28 len 15 bytes 108,111,110,103,32,37,100,32,37,99,32,37,99,10,0    ; "long %d %c %c\n"
+global @esc size 12 align 1 type str ctype "char [12]"
+  init.byte 7
+  init.byte 8
+  init.byte 12
+  init.byte 10
+  init.byte 13
+  init.byte 9
+  init.byte 11
+  init.byte 92
+  init.byte 39
+  init.byte 34
+  init.byte 63
+  init.zero 1
+global @oct size 9 align 1 type str ctype "char [9]"
+  init.byte 65
+  init.byte 66
+  init.byte 67
+  init.byte 0
+  init.byte 48
+  init.byte 7
+  init.byte 127
+  init.byte -1
+  init.zero 1
+global @hex size 7 align 1 type str ctype "char [7]"
+  init.byte 65
+  init.byte 122
+  init.byte 48
+  init.byte 0
+  init.byte -1
+  init.byte 127
+  init.zero 1
+global @asmy size 47 align 1 type str ctype "char [47]"
+  init.byte 35
+  init.byte 32
+  init.byte 110
+  init.byte 111
+  init.byte 116
+  init.byte 32
+  init.byte 97
+  init.byte 32
+  init.byte 99
+  init.byte 111
+  init.byte 109
+  init.byte 109
+  init.byte 101
+  init.byte 110
+  init.byte 116
+  init.byte 58
+  init.byte 32
+  init.byte 46
+  init.byte 97
+  init.byte 115
+  init.byte 99
+  init.byte 105
+  init.byte 105
+  init.byte 122
+  init.byte 32
+  init.byte 34
+  init.byte 120
+  init.byte 34
+  init.byte 32
+  init.byte 36
+  init.byte 116
+  init.byte 48
+  init.byte 32
+  init.byte 109
+  init.byte 97
+  init.byte 105
+  init.byte 110
+  init.byte 58
+  init.byte 32
+  init.byte 115
+  init.byte 121
+  init.byte 115
+  init.byte 99
+  init.byte 97
+  init.byte 108
+  init.byte 108
+  init.zero 1
+global @pmsg size 4 align 4 type str ctype "char *"
+  init.addr @.str4
+global @pmid size 4 align 4 type str ctype "char *"
+  init.zero 4
+global @gneg size 4 align 4 type int ctype "int"
+  init.word -42
+global @gexpr size 4 align 4 type int ctype "int"
+  init.word 52
+global @gmix size 4 align 4 type int ctype "int"
+  init.word 66
+global @gneg_hex size 4 align 4 type int ctype "int"
+  init.word -16
+global @goct size 4 align 4 type int ctype "int"
+  init.word 15
+global @gc size 1 align 1 type char ctype "char"
+  init.byte -56
+global @gq size 1 align 1 type char ctype "char"
+  init.byte 39
+global @gzero size 100 align 1 type str ctype "char [100]"
+  init.zero 100
+global @gzarr size 200 align 4 type ptr ctype "int [50]"
+  init.zero 200
+global @gdn size 8 align 8 type double ctype "double"
+  init.double -0.0025000000000000001    ; 0xbf647ae147ae147b
+global @gdi size 8 align 8 type double ctype "double"
+  init.double 7.0    ; 0x401c000000000000
+global @gdarr size 24 align 8 type ptr ctype "double [3]"
+  init.double -0.0    ; 0x8000000000000000
+  init.double 1e+100    ; 0x54b249ad2594c37d
+  init.double 3.0    ; 0x4008000000000000
+global @garr size 16 align 4 type ptr ctype "int [4]"
+  init.word 1
+  init.word -2
+  init.word 3
+  init.word -4
+global @gpa size 4 align 4 type ptr ctype "int *"
+  init.addr @garr
+global @gpb size 4 align 4 type ptr ctype "int *"
+  init.addr @garr+8
+global @grec size 20 align 4 type agg ctype "struct rec"
+  init.word 5
+  init.byte 97
+  init.byte 98
+  init.byte 99
+  init.zero 1
+  init.word 6
+  init.word 7
+  init.word 8
+global @gm size 24 align 4 type ptr ctype "int [2][3]"
+  init.word 1
+  init.word 2
+  init.word 3
+  init.word 4
+  init.word 5
+  init.word 6
+global @gpm size 4 align 4 type ptr ctype "int *"
+  init.addr @gm+16
+global @gpt size 4 align 4 type str ctype "char *"
+  init.addr @grec+5
+global @gpv size 4 align 4 type ptr ctype "int *"
+  init.addr @grec+8
+global @gpstr size 4 align 4 type str ctype "char *"
+  init.addr @asmy
+.enddata
+
+extern @printf ret int nparams 1 variadic
+extern @strlen ret int nparams 1
+
+func @show ret void retctype "void" nparams 3 frame 0 regs 15 temps 11    ; line 36
+  .param 0 name : type str ctype "char *" size 4 align 4 reg %name
+  .param 1 s : type str ctype "char *" size 4 align 4 reg %s
+  .param 2 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %name : type str ctype "char *"
+  .reg %s : type str ctype "char *"
+  .reg %n : type int ctype "int"
+  .reg %i : type int ctype "int"
+begin
+  %t4 = addr @.str6   ; line 38
+  param %t4 : str   ; line 38
+  param %name : str   ; line 38
+  %t5 = call @printf, 2   ; line 38
+  %i = 0   ; line 39
+.L1:
+  %t6 = %i < %n   ; line 39
+  ifFalse %t6 goto .L4   ; line 39
+  %t7 = addr @.str7   ; line 39
+  %t8 = %s + %i   ; line 39
+  %t9 = load.b %t8   ; line 39
+  param %t7 : str   ; line 39
+  param %t9 : char   ; line 39
+  %t10 = call @printf, 2   ; line 39
+  %t11 = %i   ; line 39
+  %t12 = %t11 + 1   ; line 39
+  %i = %t12   ; line 39
+  goto .L1   ; line 39
+.L4:
+  %t13 = addr @.str8   ; line 40
+  param %t13 : str   ; line 40
+  %t14 = call @printf, 1   ; line 40
+  return
+end
+
+func @main ret int retctype "int" nparams 0 frame 288 regs 424 temps 422    ; line 43
+  .local longs : type str ctype "char [281]" size 281 align 1 slot 0
+  .reg %i : type int ctype "int"
+  .reg %sum : type int ctype "int"
+  .reg %t366 : type double ctype "double"
+  .reg %t368 : type double ctype "double"
+  .reg %t371 : type double ctype "double"
+  .reg %t374 : type double ctype "double"
+  .reg %t377 : type double ctype "double"
+begin
+  %t2 = addr longs   ; line 44
+  memzero %t2, 281   ; line 44
+  store.b %t2, 48   ; line 44
+  %t3 = %t2 + 1   ; line 44
+  store.b %t3, 49   ; line 44
+  %t4 = %t2 + 2   ; line 44
+  store.b %t4, 50   ; line 44
+  %t5 = %t2 + 3   ; line 44
+  store.b %t5, 51   ; line 44
+  %t6 = %t2 + 4   ; line 44
+  store.b %t6, 52   ; line 44
+  %t7 = %t2 + 5   ; line 44
+  store.b %t7, 53   ; line 44
+  %t8 = %t2 + 6   ; line 44
+  store.b %t8, 54   ; line 44
+  %t9 = %t2 + 7   ; line 44
+  store.b %t9, 55   ; line 44
+  %t10 = %t2 + 8   ; line 44
+  store.b %t10, 56   ; line 44
+  %t11 = %t2 + 9   ; line 44
+  store.b %t11, 57   ; line 44
+  %t12 = %t2 + 10   ; line 44
+  store.b %t12, 48   ; line 44
+  %t13 = %t2 + 11   ; line 44
+  store.b %t13, 49   ; line 44
+  %t14 = %t2 + 12   ; line 44
+  store.b %t14, 50   ; line 44
+  %t15 = %t2 + 13   ; line 44
+  store.b %t15, 51   ; line 44
+  %t16 = %t2 + 14   ; line 44
+  store.b %t16, 52   ; line 44
+  %t17 = %t2 + 15   ; line 44
+  store.b %t17, 53   ; line 44
+  %t18 = %t2 + 16   ; line 44
+  store.b %t18, 54   ; line 44
+  %t19 = %t2 + 17   ; line 44
+  store.b %t19, 55   ; line 44
+  %t20 = %t2 + 18   ; line 44
+  store.b %t20, 56   ; line 44
+  %t21 = %t2 + 19   ; line 44
+  store.b %t21, 57   ; line 44
+  %t22 = %t2 + 20   ; line 44
+  store.b %t22, 48   ; line 44
+  %t23 = %t2 + 21   ; line 44
+  store.b %t23, 49   ; line 44
+  %t24 = %t2 + 22   ; line 44
+  store.b %t24, 50   ; line 44
+  %t25 = %t2 + 23   ; line 44
+  store.b %t25, 51   ; line 44
+  %t26 = %t2 + 24   ; line 44
+  store.b %t26, 52   ; line 44
+  %t27 = %t2 + 25   ; line 44
+  store.b %t27, 53   ; line 44
+  %t28 = %t2 + 26   ; line 44
+  store.b %t28, 54   ; line 44
+  %t29 = %t2 + 27   ; line 44
+  store.b %t29, 55   ; line 44
+  %t30 = %t2 + 28   ; line 44
+  store.b %t30, 56   ; line 44
+  %t31 = %t2 + 29   ; line 44
+  store.b %t31, 57   ; line 44
+  %t32 = %t2 + 30   ; line 44
+  store.b %t32, 48   ; line 44
+  %t33 = %t2 + 31   ; line 44
+  store.b %t33, 49   ; line 44
+  %t34 = %t2 + 32   ; line 44
+  store.b %t34, 50   ; line 44
+  %t35 = %t2 + 33   ; line 44
+  store.b %t35, 51   ; line 44
+  %t36 = %t2 + 34   ; line 44
+  store.b %t36, 52   ; line 44
+  %t37 = %t2 + 35   ; line 44
+  store.b %t37, 53   ; line 44
+  %t38 = %t2 + 36   ; line 44
+  store.b %t38, 54   ; line 44
+  %t39 = %t2 + 37   ; line 44
+  store.b %t39, 55   ; line 44
+  %t40 = %t2 + 38   ; line 44
+  store.b %t40, 56   ; line 44
+  %t41 = %t2 + 39   ; line 44
+  store.b %t41, 57   ; line 44
+  %t42 = %t2 + 40   ; line 44
+  store.b %t42, 48   ; line 44
+  %t43 = %t2 + 41   ; line 44
+  store.b %t43, 49   ; line 44
+  %t44 = %t2 + 42   ; line 44
+  store.b %t44, 50   ; line 44
+  %t45 = %t2 + 43   ; line 44
+  store.b %t45, 51   ; line 44
+  %t46 = %t2 + 44   ; line 44
+  store.b %t46, 52   ; line 44
+  %t47 = %t2 + 45   ; line 44
+  store.b %t47, 53   ; line 44
+  %t48 = %t2 + 46   ; line 44
+  store.b %t48, 54   ; line 44
+  %t49 = %t2 + 47   ; line 44
+  store.b %t49, 55   ; line 44
+  %t50 = %t2 + 48   ; line 44
+  store.b %t50, 56   ; line 44
+  %t51 = %t2 + 49   ; line 44
+  store.b %t51, 57   ; line 44
+  %t52 = %t2 + 50   ; line 44
+  store.b %t52, 48   ; line 44
+  %t53 = %t2 + 51   ; line 44
+  store.b %t53, 49   ; line 44
+  %t54 = %t2 + 52   ; line 44
+  store.b %t54, 50   ; line 44
+  %t55 = %t2 + 53   ; line 44
+  store.b %t55, 51   ; line 44
+  %t56 = %t2 + 54   ; line 44
+  store.b %t56, 52   ; line 44
+  %t57 = %t2 + 55   ; line 44
+  store.b %t57, 53   ; line 44
+  %t58 = %t2 + 56   ; line 44
+  store.b %t58, 54   ; line 44
+  %t59 = %t2 + 57   ; line 44
+  store.b %t59, 55   ; line 44
+  %t60 = %t2 + 58   ; line 44
+  store.b %t60, 56   ; line 44
+  %t61 = %t2 + 59   ; line 44
+  store.b %t61, 57   ; line 44
+  %t62 = %t2 + 60   ; line 44
+  store.b %t62, 48   ; line 44
+  %t63 = %t2 + 61   ; line 44
+  store.b %t63, 49   ; line 44
+  %t64 = %t2 + 62   ; line 44
+  store.b %t64, 50   ; line 44
+  %t65 = %t2 + 63   ; line 44
+  store.b %t65, 51   ; line 44
+  %t66 = %t2 + 64   ; line 44
+  store.b %t66, 52   ; line 44
+  %t67 = %t2 + 65   ; line 44
+  store.b %t67, 53   ; line 44
+  %t68 = %t2 + 66   ; line 44
+  store.b %t68, 54   ; line 44
+  %t69 = %t2 + 67   ; line 44
+  store.b %t69, 55   ; line 44
+  %t70 = %t2 + 68   ; line 44
+  store.b %t70, 56   ; line 44
+  %t71 = %t2 + 69   ; line 44
+  store.b %t71, 57   ; line 44
+  %t72 = %t2 + 70   ; line 44
+  store.b %t72, 48   ; line 44
+  %t73 = %t2 + 71   ; line 44
+  store.b %t73, 49   ; line 44
+  %t74 = %t2 + 72   ; line 44
+  store.b %t74, 50   ; line 44
+  %t75 = %t2 + 73   ; line 44
+  store.b %t75, 51   ; line 44
+  %t76 = %t2 + 74   ; line 44
+  store.b %t76, 52   ; line 44
+  %t77 = %t2 + 75   ; line 44
+  store.b %t77, 53   ; line 44
+  %t78 = %t2 + 76   ; line 44
+  store.b %t78, 54   ; line 44
+  %t79 = %t2 + 77   ; line 44
+  store.b %t79, 55   ; line 44
+  %t80 = %t2 + 78   ; line 44
+  store.b %t80, 56   ; line 44
+  %t81 = %t2 + 79   ; line 44
+  store.b %t81, 57   ; line 44
+  %t82 = %t2 + 80   ; line 44
+  store.b %t82, 48   ; line 44
+  %t83 = %t2 + 81   ; line 44
+  store.b %t83, 49   ; line 44
+  %t84 = %t2 + 82   ; line 44
+  store.b %t84, 50   ; line 44
+  %t85 = %t2 + 83   ; line 44
+  store.b %t85, 51   ; line 44
+  %t86 = %t2 + 84   ; line 44
+  store.b %t86, 52   ; line 44
+  %t87 = %t2 + 85   ; line 44
+  store.b %t87, 53   ; line 44
+  %t88 = %t2 + 86   ; line 44
+  store.b %t88, 54   ; line 44
+  %t89 = %t2 + 87   ; line 44
+  store.b %t89, 55   ; line 44
+  %t90 = %t2 + 88   ; line 44
+  store.b %t90, 56   ; line 44
+  %t91 = %t2 + 89   ; line 44
+  store.b %t91, 57   ; line 44
+  %t92 = %t2 + 90   ; line 44
+  store.b %t92, 48   ; line 44
+  %t93 = %t2 + 91   ; line 44
+  store.b %t93, 49   ; line 44
+  %t94 = %t2 + 92   ; line 44
+  store.b %t94, 50   ; line 44
+  %t95 = %t2 + 93   ; line 44
+  store.b %t95, 51   ; line 44
+  %t96 = %t2 + 94   ; line 44
+  store.b %t96, 52   ; line 44
+  %t97 = %t2 + 95   ; line 44
+  store.b %t97, 53   ; line 44
+  %t98 = %t2 + 96   ; line 44
+  store.b %t98, 54   ; line 44
+  %t99 = %t2 + 97   ; line 44
+  store.b %t99, 55   ; line 44
+  %t100 = %t2 + 98   ; line 44
+  store.b %t100, 56   ; line 44
+  %t101 = %t2 + 99   ; line 44
+  store.b %t101, 57   ; line 44
+  %t102 = %t2 + 100   ; line 44
+  store.b %t102, 48   ; line 44
+  %t103 = %t2 + 101   ; line 44
+  store.b %t103, 49   ; line 44
+  %t104 = %t2 + 102   ; line 44
+  store.b %t104, 50   ; line 44
+  %t105 = %t2 + 103   ; line 44
+  store.b %t105, 51   ; line 44
+  %t106 = %t2 + 104   ; line 44
+  store.b %t106, 52   ; line 44
+  %t107 = %t2 + 105   ; line 44
+  store.b %t107, 53   ; line 44
+  %t108 = %t2 + 106   ; line 44
+  store.b %t108, 54   ; line 44
+  %t109 = %t2 + 107   ; line 44
+  store.b %t109, 55   ; line 44
+  %t110 = %t2 + 108   ; line 44
+  store.b %t110, 56   ; line 44
+  %t111 = %t2 + 109   ; line 44
+  store.b %t111, 57   ; line 44
+  %t112 = %t2 + 110   ; line 44
+  store.b %t112, 48   ; line 44
+  %t113 = %t2 + 111   ; line 44
+  store.b %t113, 49   ; line 44
+  %t114 = %t2 + 112   ; line 44
+  store.b %t114, 50   ; line 44
+  %t115 = %t2 + 113   ; line 44
+  store.b %t115, 51   ; line 44
+  %t116 = %t2 + 114   ; line 44
+  store.b %t116, 52   ; line 44
+  %t117 = %t2 + 115   ; line 44
+  store.b %t117, 53   ; line 44
+  %t118 = %t2 + 116   ; line 44
+  store.b %t118, 54   ; line 44
+  %t119 = %t2 + 117   ; line 44
+  store.b %t119, 55   ; line 44
+  %t120 = %t2 + 118   ; line 44
+  store.b %t120, 56   ; line 44
+  %t121 = %t2 + 119   ; line 44
+  store.b %t121, 57   ; line 44
+  %t122 = %t2 + 120   ; line 44
+  store.b %t122, 48   ; line 44
+  %t123 = %t2 + 121   ; line 44
+  store.b %t123, 49   ; line 44
+  %t124 = %t2 + 122   ; line 44
+  store.b %t124, 50   ; line 44
+  %t125 = %t2 + 123   ; line 44
+  store.b %t125, 51   ; line 44
+  %t126 = %t2 + 124   ; line 44
+  store.b %t126, 52   ; line 44
+  %t127 = %t2 + 125   ; line 44
+  store.b %t127, 53   ; line 44
+  %t128 = %t2 + 126   ; line 44
+  store.b %t128, 54   ; line 44
+  %t129 = %t2 + 127   ; line 44
+  store.b %t129, 55   ; line 44
+  %t130 = %t2 + 128   ; line 44
+  store.b %t130, 56   ; line 44
+  %t131 = %t2 + 129   ; line 44
+  store.b %t131, 57   ; line 44
+  %t132 = %t2 + 130   ; line 44
+  store.b %t132, 48   ; line 44
+  %t133 = %t2 + 131   ; line 44
+  store.b %t133, 49   ; line 44
+  %t134 = %t2 + 132   ; line 44
+  store.b %t134, 50   ; line 44
+  %t135 = %t2 + 133   ; line 44
+  store.b %t135, 51   ; line 44
+  %t136 = %t2 + 134   ; line 44
+  store.b %t136, 52   ; line 44
+  %t137 = %t2 + 135   ; line 44
+  store.b %t137, 53   ; line 44
+  %t138 = %t2 + 136   ; line 44
+  store.b %t138, 54   ; line 44
+  %t139 = %t2 + 137   ; line 44
+  store.b %t139, 55   ; line 44
+  %t140 = %t2 + 138   ; line 44
+  store.b %t140, 56   ; line 44
+  %t141 = %t2 + 139   ; line 44
+  store.b %t141, 57   ; line 44
+  %t142 = %t2 + 140   ; line 44
+  store.b %t142, 48   ; line 44
+  %t143 = %t2 + 141   ; line 44
+  store.b %t143, 49   ; line 44
+  %t144 = %t2 + 142   ; line 44
+  store.b %t144, 50   ; line 44
+  %t145 = %t2 + 143   ; line 44
+  store.b %t145, 51   ; line 44
+  %t146 = %t2 + 144   ; line 44
+  store.b %t146, 52   ; line 44
+  %t147 = %t2 + 145   ; line 44
+  store.b %t147, 53   ; line 44
+  %t148 = %t2 + 146   ; line 44
+  store.b %t148, 54   ; line 44
+  %t149 = %t2 + 147   ; line 44
+  store.b %t149, 55   ; line 44
+  %t150 = %t2 + 148   ; line 44
+  store.b %t150, 56   ; line 44
+  %t151 = %t2 + 149   ; line 44
+  store.b %t151, 57   ; line 44
+  %t152 = %t2 + 150   ; line 44
+  store.b %t152, 48   ; line 44
+  %t153 = %t2 + 151   ; line 44
+  store.b %t153, 49   ; line 44
+  %t154 = %t2 + 152   ; line 44
+  store.b %t154, 50   ; line 44
+  %t155 = %t2 + 153   ; line 44
+  store.b %t155, 51   ; line 44
+  %t156 = %t2 + 154   ; line 44
+  store.b %t156, 52   ; line 44
+  %t157 = %t2 + 155   ; line 44
+  store.b %t157, 53   ; line 44
+  %t158 = %t2 + 156   ; line 44
+  store.b %t158, 54   ; line 44
+  %t159 = %t2 + 157   ; line 44
+  store.b %t159, 55   ; line 44
+  %t160 = %t2 + 158   ; line 44
+  store.b %t160, 56   ; line 44
+  %t161 = %t2 + 159   ; line 44
+  store.b %t161, 57   ; line 44
+  %t162 = %t2 + 160   ; line 44
+  store.b %t162, 48   ; line 44
+  %t163 = %t2 + 161   ; line 44
+  store.b %t163, 49   ; line 44
+  %t164 = %t2 + 162   ; line 44
+  store.b %t164, 50   ; line 44
+  %t165 = %t2 + 163   ; line 44
+  store.b %t165, 51   ; line 44
+  %t166 = %t2 + 164   ; line 44
+  store.b %t166, 52   ; line 44
+  %t167 = %t2 + 165   ; line 44
+  store.b %t167, 53   ; line 44
+  %t168 = %t2 + 166   ; line 44
+  store.b %t168, 54   ; line 44
+  %t169 = %t2 + 167   ; line 44
+  store.b %t169, 55   ; line 44
+  %t170 = %t2 + 168   ; line 44
+  store.b %t170, 56   ; line 44
+  %t171 = %t2 + 169   ; line 44
+  store.b %t171, 57   ; line 44
+  %t172 = %t2 + 170   ; line 44
+  store.b %t172, 48   ; line 44
+  %t173 = %t2 + 171   ; line 44
+  store.b %t173, 49   ; line 44
+  %t174 = %t2 + 172   ; line 44
+  store.b %t174, 50   ; line 44
+  %t175 = %t2 + 173   ; line 44
+  store.b %t175, 51   ; line 44
+  %t176 = %t2 + 174   ; line 44
+  store.b %t176, 52   ; line 44
+  %t177 = %t2 + 175   ; line 44
+  store.b %t177, 53   ; line 44
+  %t178 = %t2 + 176   ; line 44
+  store.b %t178, 54   ; line 44
+  %t179 = %t2 + 177   ; line 44
+  store.b %t179, 55   ; line 44
+  %t180 = %t2 + 178   ; line 44
+  store.b %t180, 56   ; line 44
+  %t181 = %t2 + 179   ; line 44
+  store.b %t181, 57   ; line 44
+  %t182 = %t2 + 180   ; line 44
+  store.b %t182, 48   ; line 44
+  %t183 = %t2 + 181   ; line 44
+  store.b %t183, 49   ; line 44
+  %t184 = %t2 + 182   ; line 44
+  store.b %t184, 50   ; line 44
+  %t185 = %t2 + 183   ; line 44
+  store.b %t185, 51   ; line 44
+  %t186 = %t2 + 184   ; line 44
+  store.b %t186, 52   ; line 44
+  %t187 = %t2 + 185   ; line 44
+  store.b %t187, 53   ; line 44
+  %t188 = %t2 + 186   ; line 44
+  store.b %t188, 54   ; line 44
+  %t189 = %t2 + 187   ; line 44
+  store.b %t189, 55   ; line 44
+  %t190 = %t2 + 188   ; line 44
+  store.b %t190, 56   ; line 44
+  %t191 = %t2 + 189   ; line 44
+  store.b %t191, 57   ; line 44
+  %t192 = %t2 + 190   ; line 44
+  store.b %t192, 48   ; line 44
+  %t193 = %t2 + 191   ; line 44
+  store.b %t193, 49   ; line 44
+  %t194 = %t2 + 192   ; line 44
+  store.b %t194, 50   ; line 44
+  %t195 = %t2 + 193   ; line 44
+  store.b %t195, 51   ; line 44
+  %t196 = %t2 + 194   ; line 44
+  store.b %t196, 52   ; line 44
+  %t197 = %t2 + 195   ; line 44
+  store.b %t197, 53   ; line 44
+  %t198 = %t2 + 196   ; line 44
+  store.b %t198, 54   ; line 44
+  %t199 = %t2 + 197   ; line 44
+  store.b %t199, 55   ; line 44
+  %t200 = %t2 + 198   ; line 44
+  store.b %t200, 56   ; line 44
+  %t201 = %t2 + 199   ; line 44
+  store.b %t201, 57   ; line 44
+  %t202 = %t2 + 200   ; line 44
+  store.b %t202, 48   ; line 44
+  %t203 = %t2 + 201   ; line 44
+  store.b %t203, 49   ; line 44
+  %t204 = %t2 + 202   ; line 44
+  store.b %t204, 50   ; line 44
+  %t205 = %t2 + 203   ; line 44
+  store.b %t205, 51   ; line 44
+  %t206 = %t2 + 204   ; line 44
+  store.b %t206, 52   ; line 44
+  %t207 = %t2 + 205   ; line 44
+  store.b %t207, 53   ; line 44
+  %t208 = %t2 + 206   ; line 44
+  store.b %t208, 54   ; line 44
+  %t209 = %t2 + 207   ; line 44
+  store.b %t209, 55   ; line 44
+  %t210 = %t2 + 208   ; line 44
+  store.b %t210, 56   ; line 44
+  %t211 = %t2 + 209   ; line 44
+  store.b %t211, 57   ; line 44
+  %t212 = %t2 + 210   ; line 44
+  store.b %t212, 48   ; line 44
+  %t213 = %t2 + 211   ; line 44
+  store.b %t213, 49   ; line 44
+  %t214 = %t2 + 212   ; line 44
+  store.b %t214, 50   ; line 44
+  %t215 = %t2 + 213   ; line 44
+  store.b %t215, 51   ; line 44
+  %t216 = %t2 + 214   ; line 44
+  store.b %t216, 52   ; line 44
+  %t217 = %t2 + 215   ; line 44
+  store.b %t217, 53   ; line 44
+  %t218 = %t2 + 216   ; line 44
+  store.b %t218, 54   ; line 44
+  %t219 = %t2 + 217   ; line 44
+  store.b %t219, 55   ; line 44
+  %t220 = %t2 + 218   ; line 44
+  store.b %t220, 56   ; line 44
+  %t221 = %t2 + 219   ; line 44
+  store.b %t221, 57   ; line 44
+  %t222 = %t2 + 220   ; line 44
+  store.b %t222, 48   ; line 44
+  %t223 = %t2 + 221   ; line 44
+  store.b %t223, 49   ; line 44
+  %t224 = %t2 + 222   ; line 44
+  store.b %t224, 50   ; line 44
+  %t225 = %t2 + 223   ; line 44
+  store.b %t225, 51   ; line 44
+  %t226 = %t2 + 224   ; line 44
+  store.b %t226, 52   ; line 44
+  %t227 = %t2 + 225   ; line 44
+  store.b %t227, 53   ; line 44
+  %t228 = %t2 + 226   ; line 44
+  store.b %t228, 54   ; line 44
+  %t229 = %t2 + 227   ; line 44
+  store.b %t229, 55   ; line 44
+  %t230 = %t2 + 228   ; line 44
+  store.b %t230, 56   ; line 44
+  %t231 = %t2 + 229   ; line 44
+  store.b %t231, 57   ; line 44
+  %t232 = %t2 + 230   ; line 44
+  store.b %t232, 48   ; line 44
+  %t233 = %t2 + 231   ; line 44
+  store.b %t233, 49   ; line 44
+  %t234 = %t2 + 232   ; line 44
+  store.b %t234, 50   ; line 44
+  %t235 = %t2 + 233   ; line 44
+  store.b %t235, 51   ; line 44
+  %t236 = %t2 + 234   ; line 44
+  store.b %t236, 52   ; line 44
+  %t237 = %t2 + 235   ; line 44
+  store.b %t237, 53   ; line 44
+  %t238 = %t2 + 236   ; line 44
+  store.b %t238, 54   ; line 44
+  %t239 = %t2 + 237   ; line 44
+  store.b %t239, 55   ; line 44
+  %t240 = %t2 + 238   ; line 44
+  store.b %t240, 56   ; line 44
+  %t241 = %t2 + 239   ; line 44
+  store.b %t241, 57   ; line 44
+  %t242 = %t2 + 240   ; line 44
+  store.b %t242, 48   ; line 44
+  %t243 = %t2 + 241   ; line 44
+  store.b %t243, 49   ; line 44
+  %t244 = %t2 + 242   ; line 44
+  store.b %t244, 50   ; line 44
+  %t245 = %t2 + 243   ; line 44
+  store.b %t245, 51   ; line 44
+  %t246 = %t2 + 244   ; line 44
+  store.b %t246, 52   ; line 44
+  %t247 = %t2 + 245   ; line 44
+  store.b %t247, 53   ; line 44
+  %t248 = %t2 + 246   ; line 44
+  store.b %t248, 54   ; line 44
+  %t249 = %t2 + 247   ; line 44
+  store.b %t249, 55   ; line 44
+  %t250 = %t2 + 248   ; line 44
+  store.b %t250, 56   ; line 44
+  %t251 = %t2 + 249   ; line 44
+  store.b %t251, 57   ; line 44
+  %t252 = %t2 + 250   ; line 44
+  store.b %t252, 48   ; line 44
+  %t253 = %t2 + 251   ; line 44
+  store.b %t253, 49   ; line 44
+  %t254 = %t2 + 252   ; line 44
+  store.b %t254, 50   ; line 44
+  %t255 = %t2 + 253   ; line 44
+  store.b %t255, 51   ; line 44
+  %t256 = %t2 + 254   ; line 44
+  store.b %t256, 52   ; line 44
+  %t257 = %t2 + 255   ; line 44
+  store.b %t257, 53   ; line 44
+  %t258 = %t2 + 256   ; line 44
+  store.b %t258, 54   ; line 44
+  %t259 = %t2 + 257   ; line 44
+  store.b %t259, 55   ; line 44
+  %t260 = %t2 + 258   ; line 44
+  store.b %t260, 56   ; line 44
+  %t261 = %t2 + 259   ; line 44
+  store.b %t261, 57   ; line 44
+  %t262 = %t2 + 260   ; line 44
+  store.b %t262, 48   ; line 44
+  %t263 = %t2 + 261   ; line 44
+  store.b %t263, 49   ; line 44
+  %t264 = %t2 + 262   ; line 44
+  store.b %t264, 50   ; line 44
+  %t265 = %t2 + 263   ; line 44
+  store.b %t265, 51   ; line 44
+  %t266 = %t2 + 264   ; line 44
+  store.b %t266, 52   ; line 44
+  %t267 = %t2 + 265   ; line 44
+  store.b %t267, 53   ; line 44
+  %t268 = %t2 + 266   ; line 44
+  store.b %t268, 54   ; line 44
+  %t269 = %t2 + 267   ; line 44
+  store.b %t269, 55   ; line 44
+  %t270 = %t2 + 268   ; line 44
+  store.b %t270, 56   ; line 44
+  %t271 = %t2 + 269   ; line 44
+  store.b %t271, 57   ; line 44
+  %t272 = %t2 + 270   ; line 44
+  store.b %t272, 48   ; line 44
+  %t273 = %t2 + 271   ; line 44
+  store.b %t273, 49   ; line 44
+  %t274 = %t2 + 272   ; line 44
+  store.b %t274, 50   ; line 44
+  %t275 = %t2 + 273   ; line 44
+  store.b %t275, 51   ; line 44
+  %t276 = %t2 + 274   ; line 44
+  store.b %t276, 52   ; line 44
+  %t277 = %t2 + 275   ; line 44
+  store.b %t277, 53   ; line 44
+  %t278 = %t2 + 276   ; line 44
+  store.b %t278, 54   ; line 44
+  %t279 = %t2 + 277   ; line 44
+  store.b %t279, 55   ; line 44
+  %t280 = %t2 + 278   ; line 44
+  store.b %t280, 56   ; line 44
+  %t281 = %t2 + 279   ; line 44
+  store.b %t281, 57   ; line 44
+  %t282 = addr @.str10   ; line 46
+  %t283 = addr @esc   ; line 46
+  %t284 = 12   ; line 46
+  param %t282 : str   ; line 46
+  param %t283 : str   ; line 46
+  param %t284 : int   ; line 46
+  call @show, 3   ; line 46
+  %t285 = addr @.str11   ; line 47
+  %t286 = addr @oct   ; line 47
+  %t287 = 9   ; line 47
+  param %t285 : str   ; line 47
+  param %t286 : str   ; line 47
+  param %t287 : int   ; line 47
+  call @show, 3   ; line 47
+  %t288 = addr @.str12   ; line 48
+  %t289 = addr @hex   ; line 48
+  %t290 = 7   ; line 48
+  param %t288 : str   ; line 48
+  param %t289 : str   ; line 48
+  param %t290 : int   ; line 48
+  call @show, 3   ; line 48
+  %t291 = addr @.str13   ; line 49
+  %t292 = 10   ; line 49
+  %t293 = 0   ; line 49
+  %t294 = 92   ; line 49
+  %t295 = 65   ; line 49
+  %t296 = 65   ; line 49
+  %t297 = -1   ; line 49
+  %t298 = 39   ; line 49
+  param %t291 : str   ; line 49
+  param %t292 : int   ; line 49
+  param %t293 : int   ; line 49
+  param %t294 : int   ; line 49
+  param %t295 : int   ; line 49
+  param %t296 : int   ; line 49
+  param %t297 : int   ; line 49
+  param %t298 : int   ; line 49
+  %t299 = call @printf, 8   ; line 49
+  %t300 = addr @.str14   ; line 50
+  %t301 = addr @asmy   ; line 50
+  %t302 = 47   ; line 50
+  param %t300 : str   ; line 50
+  param %t301 : str   ; line 50
+  param %t302 : int   ; line 50
+  %t303 = call @printf, 3   ; line 50
+  %t304 = addr @.str15   ; line 51
+  %t305 = addr @.str16   ; line 51
+  %t306 = addr @.str17   ; line 51
+  %t307 = addr @.str18   ; line 51
+  param %t304 : str   ; line 51
+  param %t305 : str   ; line 51
+  param %t306 : str   ; line 51
+  param %t307 : str   ; line 51
+  %t308 = call @printf, 4   ; line 51
+  %t309 = addr @.str19   ; line 52
+  %t310 = addr @.str20   ; line 52
+  param %t309 : str   ; line 52
+  param %t310 : str   ; line 52
+  %t311 = call @printf, 2   ; line 52
+  %t312 = addr @.str21   ; line 53
+  %t313 = addr @oct   ; line 53
+  param %t313 : str   ; line 53
+  %t314 = call @strlen, 1   ; line 53
+  %t315 = 6   ; line 53
+  param %t312 : str   ; line 53
+  param %t314 : int   ; line 53
+  param %t315 : int   ; line 53
+  %t316 = call @printf, 3   ; line 53
+  %t317 = addr @pmid   ; line 54
+  %t318 = addr @pmsg   ; line 54
+  %t319 = load.w %t318   ; line 54
+  %t320 = %t319 + 8   ; line 54
+  store.w %t317, %t320   ; line 54
+  %t321 = addr @.str23   ; line 55
+  %t322 = addr @pmsg   ; line 55
+  %t323 = load.w %t322   ; line 55
+  %t324 = addr @pmid   ; line 55
+  %t325 = load.w %t324   ; line 55
+  %t326 = addr @pmsg   ; line 55
+  %t327 = load.w %t326   ; line 55
+  %t328 = %t327 + 3   ; line 55
+  %t329 = load.b %t328   ; line 55
+  param %t321 : str   ; line 55
+  param %t323 : str   ; line 55
+  param %t325 : str   ; line 55
+  param %t329 : char   ; line 55
+  %t330 = call @printf, 4   ; line 55
+  %t331 = addr @.str13   ; line 56
+  %t332 = addr @gneg   ; line 56
+  %t333 = load.w %t332   ; line 56
+  %t334 = addr @gexpr   ; line 56
+  %t335 = load.w %t334   ; line 56
+  %t336 = addr @gmix   ; line 56
+  %t337 = load.w %t336   ; line 56
+  %t338 = addr @gneg_hex   ; line 56
+  %t339 = load.w %t338   ; line 56
+  %t340 = addr @goct   ; line 56
+  %t341 = load.w %t340   ; line 56
+  %t342 = addr @gc   ; line 56
+  %t343 = load.b %t342   ; line 56
+  %t344 = addr @gq   ; line 56
+  %t345 = load.b %t344   ; line 56
+  param %t331 : str   ; line 56
+  param %t333 : int   ; line 56
+  param %t335 : int   ; line 56
+  param %t337 : int   ; line 56
+  param %t339 : int   ; line 56
+  param %t341 : int   ; line 56
+  param %t343 : char   ; line 56
+  param %t345 : char   ; line 56
+  %t346 = call @printf, 8   ; line 56
+  %sum = 0   ; line 57
+  %i = 0   ; line 58
+.L5:
+  %t347 = %i < 100   ; line 58
+  ifFalse %t347 goto .L8   ; line 58
+  %t348 = addr @gzero   ; line 58
+  %t349 = %t348 + %i   ; line 58
+  %t350 = load.b %t349   ; line 58
+  %t351 = %sum + %t350   ; line 58
+  %sum = %t351   ; line 58
+  %t352 = %i   ; line 58
+  %t353 = %t352 + 1   ; line 58
+  %i = %t353   ; line 58
+  goto .L5   ; line 58
+.L8:
+  %i = 0   ; line 59
+.L9:
+  %t354 = %i < 50   ; line 59
+  ifFalse %t354 goto .L12   ; line 59
+  %t355 = addr @gzarr   ; line 59
+  %t356 = %i * 4   ; line 59
+  %t357 = %t355 + %t356   ; line 59
+  %t358 = load.w %t357   ; line 59
+  %t359 = %sum + %t358   ; line 59
+  %sum = %t359   ; line 59
+  %t360 = %i   ; line 59
+  %t361 = %t360 + 1   ; line 59
+  %i = %t361   ; line 59
+  goto .L9   ; line 59
+.L12:
+  %t362 = addr @.str24   ; line 60
+  param %t362 : str   ; line 60
+  param %sum : int   ; line 60
+  %t363 = call @printf, 2   ; line 60
+  %t364 = addr @.str25   ; line 61
+  %t365 = addr @gdn   ; line 61
+  %t366 = load.d %t365   ; line 61
+  %t367 = addr @gdi   ; line 61
+  %t368 = load.d %t367   ; line 61
+  %t369 = addr @gdarr   ; line 61
+  %t370 = %t369 + 0   ; line 61
+  %t371 = load.d %t370   ; line 61
+  %t372 = addr @gdarr   ; line 61
+  %t373 = %t372 + 8   ; line 61
+  %t374 = load.d %t373   ; line 61
+  %t375 = addr @gdarr   ; line 61
+  %t376 = %t375 + 16   ; line 61
+  %t377 = load.d %t376   ; line 61
+  param %t364 : str   ; line 61
+  param %t366 : double   ; line 61
+  param %t368 : double   ; line 61
+  param %t371 : double   ; line 61
+  param %t374 : double   ; line 61
+  param %t377 : double   ; line 61
+  %t378 = call @printf, 6   ; line 61
+  %t379 = addr @.str26   ; line 62
+  %t380 = addr @gpa   ; line 62
+  %t381 = load.w %t380   ; line 62
+  %t382 = %t381 + 4   ; line 62
+  %t383 = load.w %t382   ; line 62
+  %t384 = addr @gpa   ; line 62
+  %t385 = load.w %t384   ; line 62
+  %t386 = %t385 + 12   ; line 62
+  %t387 = load.w %t386   ; line 62
+  %t388 = addr @gpa   ; line 62
+  %t389 = load.w %t388   ; line 62
+  %t390 = %t389 + 0   ; line 62
+  %t391 = load.w %t390   ; line 62
+  %t392 = addr @garr   ; line 62
+  %t393 = %t392 + 8   ; line 62
+  %t394 = load.w %t393   ; line 62
+  %t395 = %t391 + %t394   ; line 62
+  %t396 = addr @gpb   ; line 62
+  %t397 = load.w %t396   ; line 62
+  %t398 = load.w %t397   ; line 62
+  param %t379 : str   ; line 62
+  param %t383 : int   ; line 62
+  param %t387 : int   ; line 62
+  param %t395 : int   ; line 62
+  param %t398 : int   ; line 62
+  %t399 = call @printf, 5   ; line 62
+  %t400 = addr @.str27   ; line 63
+  %t401 = addr @gpm   ; line 63
+  %t402 = load.w %t401   ; line 63
+  %t403 = load.w %t402   ; line 63
+  %t404 = addr @gpt   ; line 63
+  %t405 = load.w %t404   ; line 63
+  %t406 = addr @gpv   ; line 63
+  %t407 = load.w %t406   ; line 63
+  %t408 = %t407 + 8   ; line 63
+  %t409 = load.w %t408   ; line 63
+  %t410 = addr @gpstr   ; line 63
+  %t411 = load.w %t410   ; line 63
+  %t412 = %t411 + 2   ; line 63
+  param %t400 : str   ; line 63
+  param %t403 : int   ; line 63
+  param %t405 : str   ; line 63
+  param %t409 : int   ; line 63
+  param %t412 : str   ; line 63
+  %t413 = call @printf, 5   ; line 63
+  %t414 = addr @.str28   ; line 64
+  %t415 = addr longs   ; line 64
+  param %t415 : str   ; line 64
+  %t416 = call @strlen, 1   ; line 64
+  %t417 = addr longs   ; line 64
+  %t418 = %t417 + 255   ; line 64
+  %t419 = load.b %t418   ; line 64
+  %t420 = addr longs   ; line 64
+  %t421 = %t420 + 279   ; line 64
+  %t422 = load.b %t421   ; line 64
+  param %t414 : str   ; line 64
+  param %t416 : int   ; line 64
+  param %t419 : char   ; line 64
+  param %t422 : char   ; line 64
+  %t423 = call @printf, 4   ; line 64
+  return 12   ; line 65
+end

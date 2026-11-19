@@ -1,0 +1,4 @@
+10:9: Semantic: cannot dereference a value of non-pointer type int
+11:9: Semantic: cannot dereference a value of non-pointer type char
+12:9: Semantic: cannot dereference a value of non-pointer type struct S
+13:9: Semantic: cannot dereference a value of non-pointer type int

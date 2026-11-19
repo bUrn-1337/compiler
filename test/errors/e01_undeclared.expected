@@ -1,0 +1,2 @@
+4:9: Semantic: undeclared identifier 'b' (first use in this function)
+5:13: Semantic: undeclared identifier 'count' (first use in this function)

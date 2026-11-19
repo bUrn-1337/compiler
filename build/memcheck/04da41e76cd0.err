@@ -1,0 +1,8 @@
+Semantic Error [Line 11, Col 9]: invalid assignment: int * to int (an explicit cast is required)
+Semantic Error [Line 12, Col 9]: incompatible pointer types in assignment: char * to int * (an explicit cast is required)
+Semantic Error [Line 13, Col 9]: invalid assignment: int to struct S
+Semantic Error [Line 14, Col 9]: invalid assignment: struct S to int
+Semantic Error [Line 15, Col 11]: invalid operands to '%': struct S and int
+Semantic Error [Line 16, Col 9]: invalid assignment: struct S to int *
+
+6 errors found in 'test/errors/e04_type_mismatch.c'; no assembly written.

@@ -1,0 +1,3 @@
+14:10: Semantic: cannot index a value of type int (an array or pointer is required)
+15:10: Semantic: cannot index a value of type struct S (an array or pointer is required)
+16:10: Semantic: array subscript must have integer type, got int *

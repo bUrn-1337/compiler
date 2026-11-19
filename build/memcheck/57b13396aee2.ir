@@ -1,0 +1,181 @@
+; Three-address intermediate representation
+; source: test/42_valid_shadowing.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 20 bytes 105,110,110,101,114,109,111,115,116,32,118,97,108,117,101,61,37,100,10,0    ; "innermost value=%d\n"
+str @.str1 len 17 bytes 109,105,100,100,108,101,32,118,97,108,117,101,61,37,100,10,0    ; "middle value=%d\n"
+str @.str2 len 36 bytes 103,108,111,98,97,108,32,118,105,97,32,102,117,110,99,116,105,111,110,58,32,37,100,44,32,108,111,99,97,108,58,32,37,100,10,0    ; "global via function: %d, local: %d\n"
+str @.str3 len 16 bytes 98,108,111,99,107,32,118,97,108,117,101,61,37,100,10,0    ; "block value=%d\n"
+str @.str4 len 17 bytes 108,111,111,112,32,105,110,110,101,114,32,105,61,37,100,10,0    ; "loop inner i=%d\n"
+str @.str5 len 17 bytes 108,111,111,112,32,111,117,116,101,114,32,105,61,37,100,10,0    ; "loop outer i=%d\n"
+str @.str6 len 20 bytes 111,117,116,101,114,61,37,100,32,104,101,108,112,101,114,61,37,100,10,0    ; "outer=%d helper=%d\n"
+str @.str7 len 10 bytes 99,111,117,110,116,61,37,100,10,0    ; "count=%d\n"
+str @.str8 len 19 bytes 99,111,117,110,116,61,37,100,32,118,97,108,117,101,61,37,100,10,0    ; "count=%d value=%d\n"
+str @.str9 len 11 bytes 116,104,101,110,32,118,61,37,100,10,0    ; "then v=%d\n"
+str @.str10 len 11 bytes 101,108,115,101,32,118,61,37,100,10,0    ; "else v=%d\n"
+str @.str11 len 14 bytes 99,111,117,110,116,32,110,111,119,32,37,100,10,0    ; "count now %d\n"
+global @value size 4 align 4 type int ctype "int"
+  init.word 100
+global @count size 4 align 4 type int ctype "int"
+  init.word 1
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @bump ret int retctype "int" nparams 1 frame 0 regs 8 temps 5    ; line 9
+  .param 0 value : type int ctype "int" size 4 align 4 reg %value
+  .reg %value : type int ctype "int"
+  .reg %value.1 : type int ctype "int"
+  .reg %value.2 : type int ctype "int"
+begin
+  %t3 = %value + 1   ; line 10
+  %value = %t3   ; line 10
+  %value.1 = -5   ; line 12
+  %value.2 = 42   ; line 14
+  %t4 = addr @.str0   ; line 15
+  param %t4 : str   ; line 15
+  param %value.2 : int   ; line 15
+  %t5 = call @printf, 2   ; line 15
+  %t6 = addr @.str1   ; line 17
+  param %t6 : str   ; line 17
+  param %value.1 : int   ; line 17
+  %t7 = call @printf, 2   ; line 17
+  return %value   ; line 19
+end
+
+func @helper ret int retctype "int" nparams 1 frame 0 regs 2 temps 1    ; line 22
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+begin
+  %t1 = %n * 2   ; line 22
+  return %t1   ; line 22
+end
+
+func @outer ret int retctype "int" nparams 1 frame 0 regs 4 temps 2    ; line 24
+  .param 0 n : type int ctype "int" size 4 align 4 reg %n
+  .reg %n : type int ctype "int"
+  .reg %helper : type int ctype "int"
+begin
+  %t2 = %n + 1   ; line 25
+  %helper = %t2   ; line 25
+  %t3 = %helper * 10   ; line 26
+  return %t3   ; line 26
+end
+
+func @main ret int retctype "int" nparams 0 frame 0 regs 52 temps 43    ; line 29
+  .reg %i : type int ctype "int"
+  .reg %value : type int ctype "int"
+  .reg %value.1 : type int ctype "int"
+  .reg %i2 : type int ctype "int"
+  .reg %i.1 : type int ctype "int"
+  .reg %count : type int ctype "int"
+  .reg %v : type int ctype "int"
+  .reg %v.1 : type int ctype "int"
+  .reg %count2 : type int ctype "int"
+begin
+  %value = 7   ; line 31
+  %t9 = addr @.str2   ; line 33
+  %t10 = 10   ; line 33
+  param %t10 : int   ; line 33
+  %t11 = call @bump, 1   ; line 33
+  param %t9 : str   ; line 33
+  param %t11 : int   ; line 33
+  param %value : int   ; line 33
+  %t12 = call @printf, 3   ; line 33
+  %t13 = call @value_shadow_probe, 0   ; line 36
+  %value.1 = %t13   ; line 36
+  %t14 = addr @.str3   ; line 37
+  param %t14 : str   ; line 37
+  param %value.1 : int   ; line 37
+  %t15 = call @printf, 2   ; line 37
+  %i = 0   ; line 40
+.L1:
+  %t16 = %i < 2   ; line 40
+  ifFalse %t16 goto .L4   ; line 40
+  %i2 = %i   ; line 41
+  %t17 = 90 + %i2   ; line 43
+  %i.1 = %t17   ; line 43
+  %t18 = addr @.str4   ; line 44
+  param %t18 : str   ; line 44
+  param %i.1 : int   ; line 44
+  %t19 = call @printf, 2   ; line 44
+  %t20 = addr @.str5   ; line 46
+  param %t20 : str   ; line 46
+  param %i : int   ; line 46
+  %t21 = call @printf, 2   ; line 46
+  %t22 = %i   ; line 40
+  %t23 = %t22 + 1   ; line 40
+  %i = %t23   ; line 40
+  goto .L1   ; line 40
+.L4:
+  %t24 = addr @.str6   ; line 49
+  %t25 = 4   ; line 49
+  param %t25 : int   ; line 49
+  %t26 = call @outer, 1   ; line 49
+  %t27 = 4   ; line 49
+  param %t27 : int   ; line 49
+  %t28 = call @helper, 1   ; line 49
+  param %t24 : str   ; line 49
+  param %t26 : int   ; line 49
+  param %t28 : int   ; line 49
+  %t29 = call @printf, 3   ; line 49
+  %count = 50   ; line 53
+  %t30 = addr @.str7   ; line 54
+  param %t30 : str   ; line 54
+  param %count : int   ; line 54
+  %t31 = call @printf, 2   ; line 54
+  %t32 = addr @.str8   ; line 56
+  %t33 = addr @count   ; line 56
+  %t34 = load.w %t33   ; line 56
+  param %t32 : str   ; line 56
+  param %t34 : int   ; line 56
+  param %value : int   ; line 56
+  %t35 = call @printf, 3   ; line 56
+  %t36 = %value > 0   ; line 59
+  ifFalse %t36 goto .L6   ; line 59
+  %v = 1   ; line 59
+  %t37 = addr @.str9   ; line 59
+  param %t37 : str   ; line 59
+  param %v : int   ; line 59
+  %t38 = call @printf, 2   ; line 59
+  goto .L7   ; line 59
+.L6:
+  %v.1 = 2   ; line 60
+  %t39 = addr @.str10   ; line 60
+  param %t39 : str   ; line 60
+  param %v.1 : int   ; line 60
+  %t40 = call @printf, 2   ; line 60
+.L7:
+.L8:
+  %t41 = addr @count   ; line 61
+  %t42 = load.w %t41   ; line 61
+  %t43 = %t42 < 3   ; line 61
+  ifFalse %t43 goto .L10   ; line 61
+  %t44 = addr @count   ; line 61
+  %t45 = load.w %t44   ; line 61
+  %count2 = %t45   ; line 61
+  %t46 = addr @count   ; line 61
+  %t47 = %count2 + 1   ; line 61
+  store.w %t46, %t47   ; line 61
+  goto .L8   ; line 61
+.L10:
+  %t48 = addr @.str11   ; line 62
+  %t49 = addr @count   ; line 62
+  %t50 = load.w %t49   ; line 62
+  param %t48 : str   ; line 62
+  param %t50 : int   ; line 62
+  %t51 = call @printf, 2   ; line 62
+  return 0   ; line 63
+end
+
+func @value_shadow_probe ret int retctype "int" nparams 0 frame 0 regs 5 temps 5    ; line 7
+begin
+  %t0 = addr @value   ; line 66
+  %t1 = load.w %t0   ; line 66
+  %t2 = addr @count   ; line 66
+  %t3 = load.w %t2   ; line 66
+  %t4 = %t1 + %t3   ; line 66
+  return %t4   ; line 66
+end

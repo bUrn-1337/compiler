@@ -1,0 +1,15 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+asc: -11.00 -7.25 -0.50 0.00 2.00 3.50 9.75 12.50
+desc: 12.50 9.75 3.50 2.00 0.00 -0.50 -7.25 -11.00
+byabs: 0.00 -0.50 2.00 3.50 -7.25 9.75 -11.00 12.50
+sorted: -11.00 -7.25 -0.50 0.00 2.00 3.50 9.75 12.50
+find 2.00 -> 4, find 9.75 -> 6, find 4.00 -> -1
+records: (4,B,71.5) (1,A,92.0) (7,C,55.5) (2,A,92.0) (9,B,64.0)
+by score: (7,C,55.5) (9,B,64.0) (4,B,71.5) (1,A,92.0) (2,A,92.0)
+by grade: (1,A,92.0) (2,A,92.0) (4,B,71.5) (9,B,64.0) (7,C,55.5)
+byScore(r0,r1) = 0, byGrade(r0,r1) = -1
+same pointer: 1, not null: 1

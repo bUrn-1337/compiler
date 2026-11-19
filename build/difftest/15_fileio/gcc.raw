@@ -1,0 +1,9 @@
+fscanf n=2 a=10 b=32 sum=42
+line2=[second line
+]line3=[third line
+]bytes=31 lines=4 eof=1
+after rewind a=10
+appended 99
+missing=1
+squares total=55
+removed=1

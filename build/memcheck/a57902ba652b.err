@@ -1,0 +1,3 @@
+Lexical Error [Line 26, Col 1]: Unterminated block comment -> '/*'
+
+1 error found in 'build/malformed/cut3_43_valid_typedef_scope.c'; no assembly written.

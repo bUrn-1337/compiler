@@ -1,0 +1,30 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+1.500000
+0.500000
+5.000000
+1000.000000
+0.001500
+12.500000
+4.500 10.000 3.000
+1.500000 0.333333
+3.500000
+3
+2 -2 0 0
+7 1000000000
+100.000000 10000000000.000000
+100
+4.000 0.500
+2.100000 -2.100000
+1 0 1 0
+f nonzero
+zero is false
+both nonzero
+second nonzero
+2.100 2.500
+2.500 1.500 3.500
+4 8 48
+8 4

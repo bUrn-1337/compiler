@@ -1,0 +1,5 @@
+Semantic Error [Line 4, Col 5]: 'break' outside of a loop or switch statement
+Semantic Error [Line 5, Col 5]: 'continue' outside of a loop statement
+Semantic Error [Line 11, Col 13]: 'continue' outside of a loop statement
+
+3 errors found in 'test/errors/e09_break_continue.c'; no assembly written.

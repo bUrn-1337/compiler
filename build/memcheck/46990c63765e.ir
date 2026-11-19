@@ -1,0 +1,135 @@
+; Three-address intermediate representation
+; source: test/14_cmdline.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 9 bytes 97,114,103,99,61,37,100,10,0    ; "argc=%d\n"
+str @.str1 len 5 bytes 91,37,115,93,0    ; "[%s]"
+str @.str2 len 2 bytes 10,0    ; "\n"
+str @.str3 len 4 bytes 37,100,32,0    ; "%d "
+str @.str4 len 8 bytes 115,117,109,61,37,100,10,0    ; "sum=%d\n"
+str @.str5 len 18 bytes 102,105,114,115,116,61,37,99,32,108,97,115,116,61,37,99,10,0    ; "first=%c last=%c\n"
+str @.str6 len 3 bytes 45,118,0    ; "-v"
+str @.str7 len 9 bytes 118,101,114,98,111,115,101,10,0    ; "verbose\n"
+.enddata
+
+extern @printf ret int nparams 1 variadic
+extern @strlen ret int nparams 1
+extern @atoi ret int nparams 1
+extern @strcmp ret int nparams 2
+
+func @main ret int retctype "int" nparams 2 frame 0 regs 58 temps 52    ; line 4
+  .param 0 argc : type int ctype "int" size 4 align 4 reg %argc
+  .param 1 argv : type ptr ctype "char **" size 4 align 4 reg %argv
+  .reg %argc : type int ctype "int"
+  .reg %argv : type ptr ctype "char **"
+  .reg %i : type int ctype "int"
+  .reg %sum : type int ctype "int"
+  .reg %p : type str ctype "char *"
+  .reg %q : type ptr ctype "char **"
+begin
+  %t6 = addr @.str0   ; line 10
+  param %t6 : str   ; line 10
+  param %argc : int   ; line 10
+  %t7 = call @printf, 2   ; line 10
+  %i = 1   ; line 12
+.L1:
+  %t8 = %i < %argc   ; line 12
+  ifFalse %t8 goto .L4   ; line 12
+  %t9 = addr @.str1   ; line 12
+  %t10 = %i * 4   ; line 12
+  %t11 = %argv + %t10   ; line 12
+  %t12 = load.w %t11   ; line 12
+  param %t9 : str   ; line 12
+  param %t12 : str   ; line 12
+  %t13 = call @printf, 2   ; line 12
+  %t14 = %i + 1   ; line 12
+  %i = %t14   ; line 12
+  goto .L1   ; line 12
+.L4:
+  %t15 = addr @.str2   ; line 13
+  param %t15 : str   ; line 13
+  %t16 = call @printf, 1   ; line 13
+  %t17 = %argv + 4   ; line 16
+  %q = %t17   ; line 16
+.L5:
+  %t18 = load.w %q   ; line 17
+  %t19 = %t18 != 0   ; line 17
+  ifFalse %t19 goto .L7   ; line 17
+  %t20 = addr @.str3   ; line 17
+  %t21 = load.w %q   ; line 17
+  param %t21 : str   ; line 17
+  %t22 = call @strlen, 1   ; line 17
+  param %t20 : str   ; line 17
+  param %t22 : int   ; line 17
+  %t23 = call @printf, 2   ; line 17
+  %t24 = %q + 4   ; line 17
+  %q = %t24   ; line 17
+  goto .L5   ; line 17
+.L7:
+  %t25 = addr @.str2   ; line 18
+  param %t25 : str   ; line 18
+  %t26 = call @printf, 1   ; line 18
+  %sum = 0   ; line 21
+  %i = 1   ; line 22
+.L8:
+  %t27 = %i < %argc   ; line 22
+  ifFalse %t27 goto .L11   ; line 22
+  %t28 = %i * 4   ; line 22
+  %t29 = %argv + %t28   ; line 22
+  %t30 = load.w %t29   ; line 22
+  param %t30 : str   ; line 22
+  %t31 = call @atoi, 1   ; line 22
+  %t32 = %sum + %t31   ; line 22
+  %sum = %t32   ; line 22
+  %t33 = %i + 1   ; line 22
+  %i = %t33   ; line 22
+  goto .L8   ; line 22
+.L11:
+  %t34 = addr @.str4   ; line 23
+  param %t34 : str   ; line 23
+  param %sum : int   ; line 23
+  %t35 = call @printf, 2   ; line 23
+  %t36 = %argc > 1   ; line 26
+  ifFalse %t36 goto .L13   ; line 26
+  %t37 = %argv + 4   ; line 27
+  %t38 = load.w %t37   ; line 27
+  %p = %t38   ; line 27
+  %t39 = addr @.str5   ; line 28
+  %t40 = %p + 0   ; line 28
+  %t41 = load.b %t40   ; line 28
+  param %p : str   ; line 28
+  %t42 = call @strlen, 1   ; line 28
+  %t43 = %t42 - 1   ; line 28
+  %t44 = %p + %t43   ; line 28
+  %t45 = load.b %t44   ; line 28
+  param %t39 : str   ; line 28
+  param %t41 : char   ; line 28
+  param %t45 : char   ; line 28
+  %t46 = call @printf, 3   ; line 28
+.L13:
+  %i = 1   ; line 32
+.L14:
+  %t47 = %i < %argc   ; line 32
+  ifFalse %t47 goto .L17   ; line 32
+  %t48 = %i * 4   ; line 33
+  %t49 = %argv + %t48   ; line 33
+  %t50 = load.w %t49   ; line 33
+  %t51 = addr @.str6   ; line 33
+  param %t50 : str   ; line 33
+  param %t51 : str   ; line 33
+  %t52 = call @strcmp, 2   ; line 33
+  %t53 = %t52 == 0   ; line 33
+  ifFalse %t53 goto .L19   ; line 33
+  %t54 = addr @.str7   ; line 33
+  param %t54 : str   ; line 33
+  %t55 = call @printf, 1   ; line 33
+.L19:
+  %t56 = %i + 1   ; line 32
+  %i = %t56   ; line 32
+  goto .L14   ; line 32
+.L17:
+  %t57 = %argc - 1   ; line 35
+  return %t57   ; line 35
+end

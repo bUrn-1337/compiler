@@ -1,0 +1,11 @@
+Semantic Error [Line 15, Col 6]: array subscript must have integer type, got float
+Semantic Error [Line 16, Col 13]: switch expression must have integer type, got double (a floating-point value cannot be switched on)
+Semantic Error [Line 21, Col 9]: case label is not an integer constant expression (its type is double)
+Semantic Error [Line 24, Col 9]: invalid assignment: float to int * (there is no conversion between a floating-point type and a pointer)
+Semantic Error [Line 25, Col 9]: invalid assignment: int * to double (there is no conversion between a floating-point type and a pointer)
+Semantic Error [Line 26, Col 14]: invalid argument passing: double to int * (there is no conversion between a floating-point type and a pointer)
+Semantic Error [Line 27, Col 17]: invalid argument passing: float to struct P
+Semantic Error [Line 28, Col 9]: invalid assignment: double to struct P
+Semantic Error [Line 29, Col 9]: invalid assignment: struct P to float
+
+9 errors found in 'test/errors/e19_float_misuse.c'; no assembly written.

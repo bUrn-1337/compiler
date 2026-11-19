@@ -1,0 +1,24 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+a = 3.000000 + 4.000000i
+b = 1.000000 - 2.000000i
+a+b = 4.000000 + 2.000000i
+a-b = 2.000000 + 6.000000i
+a*b = 11.000000 - 2.000000i
+a/b = -1.000000 + 2.000000i
+conj a = 3.000000 - 4.000000i
+a^3 = -117.000000 + 44.000000i
+|a| = 5.00000000  |b| = 2.23606798  norm a = 25.0
+a (unchanged) = 3.000000 + 4.000000i
+roundtrip ok = 1
+mandel 0 = 50
+mandel 1 = 50
+mandel 2 = 1
+..#.
++##+
+###+
++##+
+..#.

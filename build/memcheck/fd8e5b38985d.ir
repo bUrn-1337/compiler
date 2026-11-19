@@ -1,0 +1,512 @@
+; Three-address intermediate representation
+; source: test/23_text.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 43 bytes 116,104,101,32,113,117,105,99,107,32,98,114,111,119,110,32,102,111,120,32,106,117,109,112,115,32,111,118,101,114,32,50,32,108,97,122,121,32,100,111,103,115,0    ; "the quick brown fox jumps over 2 lazy dogs"
+str @.str1 len 18 bytes 116,101,120,116,61,91,37,115,93,32,108,101,110,61,37,100,10,0    ; "text=[%s] len=%d\n"
+str @.str2 len 10 bytes 119,111,114,100,115,61,37,100,10,0    ; "words=%d\n"
+str @.str3 len 11 bytes 37,100,58,37,115,40,37,100,41,32,0    ; "%d:%s(%d) "
+str @.str4 len 13 bytes 10,108,111,110,103,101,115,116,61,37,115,10,0    ; "\nlongest=%s\n"
+str @.str5 len 22 bytes 102,111,120,32,97,116,32,37,100,44,32,99,97,116,32,97,116,32,37,100,10,0    ; "fox at %d, cat at %d\n"
+str @.str6 len 4 bytes 102,111,120,0    ; "fox"
+str @.str7 len 4 bytes 99,97,116,0    ; "cat"
+str @.str8 len 31 bytes 118,111,119,101,108,115,61,37,100,32,115,112,97,99,101,115,61,37,100,32,100,105,103,105,116,115,61,37,100,10,0    ; "vowels=%d spaces=%d digits=%d\n"
+str @.str9 len 13 bytes 114,101,118,101,114,115,101,100,61,37,115,10,0    ; "reversed=%s\n"
+str @.str10 len 10 bytes 117,112,112,101,114,61,37,115,10,0    ; "upper=%s\n"
+str @.str11 len 5 bytes 91,37,115,93,0    ; "[%s]"
+str @.str12 len 2 bytes 10,0    ; "\n"
+str @.str13 len 6 bytes 37,99,37,99,10,0    ; "%c%c\n"
+str @.str14 len 23 bytes 98,121,116,101,48,61,37,99,32,105,45,110,111,110,122,101,114,111,61,37,100,10,0    ; "byte0=%c i-nonzero=%d\n"
+.enddata
+
+extern @strcmp ret int nparams 2
+extern @strcpy ret str nparams 2
+extern @printf ret int nparams 1 variadic
+
+func @myStrlen ret int retctype "int" nparams 1 frame 0 regs 6 temps 4    ; line 14
+  .param 0 s : type str ctype "char *" size 4 align 4 reg %s
+  .reg %s : type str ctype "char *"
+  .reg %n : type int ctype "int"
+begin
+  %n = 0   ; line 16
+.L1:
+  %t2 = load.b %s   ; line 17
+  %t3 = %t2 != 0   ; line 17
+  ifFalse %t3 goto .L3   ; line 17
+  %t4 = %n + 1   ; line 17
+  %n = %t4   ; line 17
+  %t5 = %s + 1   ; line 17
+  %s = %t5   ; line 17
+  goto .L1   ; line 17
+.L3:
+  return %n   ; line 18
+end
+
+func @toUpper ret void retctype "void" nparams 1 frame 0 regs 13 temps 12    ; line 21
+  .param 0 s : type str ctype "char *" size 4 align 4 reg %s
+  .reg %s : type str ctype "char *"
+begin
+.L4:
+  %t1 = load.b %s   ; line 22
+  %t2 = %t1 != 0   ; line 22
+  ifFalse %t2 goto .L6   ; line 22
+  %t3 = load.b %s   ; line 23
+  %t4 = %t3 >= 97   ; line 23
+  ifFalse %t4 goto .L8   ; line 23
+  %t5 = load.b %s   ; line 23
+  %t6 = %t5 <= 122   ; line 23
+  ifFalse %t6 goto .L8   ; line 23
+  %t7 = load.b %s   ; line 23
+  %t8 = %t7 - 97   ; line 23
+  %t9 = %t8 + 65   ; line 23
+  %t10 = sext.b %t9   ; line 23
+  store.b %s, %t10   ; line 23
+  %t11 = sext.b %t10   ; line 23
+.L8:
+  %t12 = %s + 1   ; line 24
+  %s = %t12   ; line 24
+  goto .L4   ; line 24
+.L6:
+  return
+end
+
+func @isLetter ret int retctype "int" nparams 1 frame 0 regs 6 temps 5    ; line 28
+  .param 0 c : type char ctype "char" size 1 align 1 reg %c
+  .reg %c : type char ctype "char"
+begin
+  %t2 = %c >= 97   ; line 28
+  ifFalse %t2 goto .L12   ; line 28
+  %t3 = %c <= 122   ; line 28
+  if %t3 goto .L9   ; line 28
+.L12:
+  %t4 = %c >= 65   ; line 28
+  ifFalse %t4 goto .L10   ; line 28
+  %t5 = %c <= 90   ; line 28
+  ifFalse %t5 goto .L10   ; line 28
+.L9:
+  %t1 = 1   ; line 28
+  goto .L11   ; line 28
+.L10:
+  %t1 = 0   ; line 28
+.L11:
+  return %t1   ; line 28
+end
+
+func @tokenize ret int retctype "int" nparams 3 frame 0 regs 33 temps 27    ; line 31
+  .param 0 text : type str ctype "char *" size 4 align 4 reg %text
+  .param 1 table : type ptr ctype "struct <anonymous> *" size 4 align 4 reg %table
+  .param 2 max : type int ctype "int" size 4 align 4 reg %max
+  .reg %text : type str ctype "char *"
+  .reg %table : type ptr ctype "struct <anonymous> *"
+  .reg %max : type int ctype "int"
+  .reg %n : type int ctype "int"
+  .reg %k : type int ctype "int"
+  .reg %p : type str ctype "char *"
+begin
+  %n = 0   ; line 35
+  %p = %text   ; line 36
+.L13:
+  %t6 = load.b %p   ; line 37
+  %t7 = %t6 != 0   ; line 37
+  ifFalse %t7 goto .L15   ; line 37
+  %t8 = %n < %max   ; line 37
+  ifFalse %t8 goto .L15   ; line 37
+.L16:
+  %t9 = load.b %p   ; line 38
+  %t10 = %t9 != 0   ; line 38
+  ifFalse %t10 goto .L18   ; line 38
+  %t11 = load.b %p   ; line 38
+  param %t11 : char   ; line 38
+  %t12 = call @isLetter, 1   ; line 38
+  if %t12 goto .L18   ; line 38
+  %t13 = %p + 1   ; line 38
+  %p = %t13   ; line 38
+  goto .L16   ; line 38
+.L18:
+  %t14 = load.b %p   ; line 39
+  %t15 = %t14 == 0   ; line 39
+  ifFalse %t15 goto .L20   ; line 39
+  goto .L15   ; line 39
+.L20:
+  %k = 0   ; line 40
+.L21:
+  %t16 = load.b %p   ; line 41
+  param %t16 : char   ; line 41
+  %t17 = call @isLetter, 1   ; line 41
+  ifFalse %t17 goto .L23   ; line 41
+  %t18 = %k < 15   ; line 41
+  ifFalse %t18 goto .L23   ; line 41
+  %t19 = %n * 20   ; line 41
+  %t20 = %table + %t19   ; line 41
+  %t21 = %t20 + %k   ; line 41
+  %t22 = load.b %p   ; line 41
+  store.b %t21, %t22   ; line 41
+  %t23 = sext.b %t22   ; line 41
+  %t24 = %k + 1   ; line 41
+  %k = %t24   ; line 41
+  %t25 = %p + 1   ; line 41
+  %p = %t25   ; line 41
+  goto .L21   ; line 41
+.L23:
+  %t26 = %n * 20   ; line 42
+  %t27 = %table + %t26   ; line 42
+  %t28 = %t27 + %k   ; line 42
+  store.b %t28, 0   ; line 42
+  %t29 = %n * 20   ; line 43
+  %t30 = %table + %t29   ; line 43
+  %t31 = %t30 + 16   ; line 43
+  store.w %t31, %k   ; line 43
+  %t32 = %n + 1   ; line 44
+  %n = %t32   ; line 44
+  goto .L13   ; line 44
+.L15:
+  return %n   ; line 46
+end
+
+func @findWord ret int retctype "int" nparams 3 frame 0 regs 10 temps 6    ; line 49
+  .param 0 table : type ptr ctype "struct <anonymous> *" size 4 align 4 reg %table
+  .param 1 n : type int ctype "int" size 4 align 4 reg %n
+  .param 2 w : type str ctype "char *" size 4 align 4 reg %w
+  .reg %table : type ptr ctype "struct <anonymous> *"
+  .reg %n : type int ctype "int"
+  .reg %w : type str ctype "char *"
+  .reg %i : type int ctype "int"
+begin
+  %i = 0   ; line 51
+.L24:
+  %t4 = %i < %n   ; line 51
+  ifFalse %t4 goto .L27   ; line 51
+  %t5 = %i * 20   ; line 51
+  %t6 = %table + %t5   ; line 51
+  param %t6 : str   ; line 51
+  param %w : str   ; line 51
+  %t7 = call @strcmp, 2   ; line 51
+  %t8 = %t7 == 0   ; line 51
+  ifFalse %t8 goto .L29   ; line 51
+  return %i   ; line 51
+.L29:
+  %t9 = %i + 1   ; line 51
+  %i = %t9   ; line 51
+  goto .L24   ; line 51
+.L27:
+  return -1   ; line 52
+end
+
+func @reverseInPlace ret void retctype "void" nparams 1 frame 0 regs 20 temps 16    ; line 55
+  .param 0 s : type str ctype "char *" size 4 align 4 reg %s
+  .reg %s : type str ctype "char *"
+  .reg %n : type int ctype "int"
+  .reg %i : type int ctype "int"
+  .reg %t : type char ctype "char"
+begin
+  param %s : str   ; line 59
+  %t4 = call @myStrlen, 1   ; line 59
+  %n = %t4   ; line 59
+  %i = 0   ; line 60
+.L30:
+  %t5 = %n / 2   ; line 60
+  %t6 = %i < %t5   ; line 60
+  ifFalse %t6 goto .L33   ; line 60
+  %t7 = %s + %i   ; line 60
+  %t8 = load.b %t7   ; line 60
+  %t = %t8   ; line 60
+  %t = sext.b %t   ; line 60
+  %t9 = %s + %i   ; line 60
+  %t10 = %n - 1   ; line 60
+  %t11 = %t10 - %i   ; line 60
+  %t12 = %s + %t11   ; line 60
+  %t13 = load.b %t12   ; line 60
+  store.b %t9, %t13   ; line 60
+  %t14 = sext.b %t13   ; line 60
+  %t15 = %n - 1   ; line 60
+  %t16 = %t15 - %i   ; line 60
+  %t17 = %s + %t16   ; line 60
+  store.b %t17, %t   ; line 60
+  %t18 = sext.b %t   ; line 60
+  %t19 = %i + 1   ; line 60
+  %i = %t19   ; line 60
+  goto .L30   ; line 60
+.L33:
+  return
+end
+
+func @classify ret int retctype "int" nparams 1 frame 0 regs 10 temps 9    ; line 63
+  .param 0 c : type char ctype "char" size 1 align 1 reg %c
+  .reg %c : type char ctype "char"
+begin
+  %t1 = %c == 97   ; line 65
+  if %t1 goto .L35   ; line 65
+  %t2 = %c == 101   ; line 66
+  if %t2 goto .L36   ; line 66
+  %t3 = %c == 105   ; line 67
+  if %t3 goto .L37   ; line 67
+  %t4 = %c == 111   ; line 68
+  if %t4 goto .L38   ; line 68
+  %t5 = %c == 117   ; line 69
+  if %t5 goto .L39   ; line 69
+  %t6 = %c == 32   ; line 71
+  if %t6 goto .L40   ; line 71
+  %t7 = %c == 9   ; line 72
+  if %t7 goto .L41   ; line 72
+  goto .L42   ; line 64
+.L35:
+.L36:
+.L37:
+.L38:
+.L39:
+  return 1   ; line 70
+.L40:
+.L41:
+  return 2   ; line 73
+.L42:
+  %t8 = %c >= 48   ; line 75
+  ifFalse %t8 goto .L44   ; line 75
+  %t9 = %c <= 57   ; line 75
+  ifFalse %t9 goto .L44   ; line 75
+  return 3   ; line 75
+.L44:
+  return 0   ; line 76
+  return 0
+end
+
+func @main ret int retctype "int" nparams 0 frame 448 regs 133 temps 124    ; line 80
+  .local text : type str ctype "char [80]" size 80 align 1 slot 0
+  .local table : type ptr ctype "struct <anonymous> [16]" size 320 align 4 slot 80
+  .local buf : type str ctype "char [32]" size 32 align 1 slot 400
+  .local v : type agg ctype "union Value" size 4 align 4 slot 432
+  .local words : type ptr ctype "char *[3]" size 12 align 4 slot 436
+  .reg %n : type int ctype "int"
+  .reg %i : type int ctype "int"
+  .reg %vowels : type int ctype "int"
+  .reg %spaces : type int ctype "int"
+  .reg %digits : type int ctype "int"
+  .reg %longest : type int ctype "int"
+  .reg %p : type str ctype "char *"
+  .reg %pp : type ptr ctype "char **"
+  .reg %cls : type int ctype "int"
+begin
+  %t9 = addr text   ; line 94
+  %t10 = addr @.str0   ; line 94
+  param %t9 : str   ; line 94
+  param %t10 : str   ; line 94
+  %t11 = call @strcpy, 2   ; line 94
+  %t12 = addr @.str1   ; line 95
+  %t13 = addr text   ; line 95
+  %t14 = addr text   ; line 95
+  param %t14 : str   ; line 95
+  %t15 = call @myStrlen, 1   ; line 95
+  param %t12 : str   ; line 95
+  param %t13 : str   ; line 95
+  param %t15 : int   ; line 95
+  %t16 = call @printf, 3   ; line 95
+  %t17 = addr text   ; line 97
+  %t18 = addr table   ; line 97
+  %t19 = 16   ; line 97
+  param %t17 : str   ; line 97
+  param %t18 : ptr   ; line 97
+  param %t19 : int   ; line 97
+  %t20 = call @tokenize, 3   ; line 97
+  %n = %t20   ; line 97
+  %t21 = addr @.str2   ; line 98
+  param %t21 : str   ; line 98
+  param %n : int   ; line 98
+  %t22 = call @printf, 2   ; line 98
+  %longest = 0   ; line 99
+  %i = 0   ; line 100
+.L45:
+  %t23 = %i < %n   ; line 100
+  ifFalse %t23 goto .L48   ; line 100
+  %t24 = addr @.str3   ; line 101
+  %t25 = addr table   ; line 101
+  %t26 = %i * 20   ; line 101
+  %t27 = %t25 + %t26   ; line 101
+  %t28 = addr table   ; line 101
+  %t29 = %i * 20   ; line 101
+  %t30 = %t28 + %t29   ; line 101
+  %t31 = %t30 + 16   ; line 101
+  %t32 = load.w %t31   ; line 101
+  param %t24 : str   ; line 101
+  param %i : int   ; line 101
+  param %t27 : str   ; line 101
+  param %t32 : int   ; line 101
+  %t33 = call @printf, 4   ; line 101
+  %t34 = addr table   ; line 102
+  %t35 = %i * 20   ; line 102
+  %t36 = %t34 + %t35   ; line 102
+  %t37 = %t36 + 16   ; line 102
+  %t38 = load.w %t37   ; line 102
+  %t39 = addr table   ; line 102
+  %t40 = %longest * 20   ; line 102
+  %t41 = %t39 + %t40   ; line 102
+  %t42 = %t41 + 16   ; line 102
+  %t43 = load.w %t42   ; line 102
+  %t44 = %t38 > %t43   ; line 102
+  ifFalse %t44 goto .L50   ; line 102
+  %longest = %i   ; line 102
+.L50:
+  %t45 = %i + 1   ; line 100
+  %i = %t45   ; line 100
+  goto .L45   ; line 100
+.L48:
+  %t46 = addr @.str4   ; line 104
+  %t47 = addr table   ; line 104
+  %t48 = %longest * 20   ; line 104
+  %t49 = %t47 + %t48   ; line 104
+  param %t46 : str   ; line 104
+  param %t49 : str   ; line 104
+  %t50 = call @printf, 2   ; line 104
+  %t51 = addr @.str5   ; line 106
+  %t52 = addr table   ; line 106
+  %t53 = addr @.str6   ; line 106
+  param %t52 : ptr   ; line 106
+  param %n : int   ; line 106
+  param %t53 : str   ; line 106
+  %t54 = call @findWord, 3   ; line 106
+  %t55 = addr table   ; line 106
+  %t56 = addr @.str7   ; line 106
+  param %t55 : ptr   ; line 106
+  param %n : int   ; line 106
+  param %t56 : str   ; line 106
+  %t57 = call @findWord, 3   ; line 106
+  param %t51 : str   ; line 106
+  param %t54 : int   ; line 106
+  param %t57 : int   ; line 106
+  %t58 = call @printf, 3   ; line 106
+  %vowels = 0   ; line 109
+  %spaces = 0   ; line 109
+  %digits = 0   ; line 109
+  %i = 0   ; line 110
+.L51:
+  %t59 = addr text   ; line 113
+  %t60 = %t59 + %i   ; line 113
+  %t61 = load.b %t60   ; line 113
+  param %t61 : char   ; line 113
+  %t62 = call @classify, 1   ; line 113
+  %cls = %t62   ; line 113
+  %t63 = %cls == 1   ; line 114
+  ifFalse %t63 goto .L55   ; line 114
+  %t64 = %vowels + 1   ; line 114
+  %vowels = %t64   ; line 114
+  goto .L56   ; line 114
+.L55:
+  %t65 = %cls == 2   ; line 115
+  ifFalse %t65 goto .L58   ; line 115
+  %t66 = %spaces + 1   ; line 115
+  %spaces = %t66   ; line 115
+  goto .L59   ; line 115
+.L58:
+  %t67 = %cls == 3   ; line 116
+  ifFalse %t67 goto .L61   ; line 116
+  %t68 = %digits + 1   ; line 116
+  %digits = %t68   ; line 116
+.L61:
+.L59:
+.L56:
+  %t69 = %i + 1   ; line 117
+  %i = %t69   ; line 117
+  %t70 = addr text   ; line 118
+  %t71 = %t70 + %i   ; line 118
+  %t72 = load.b %t71   ; line 118
+  %t73 = %t72 != 0   ; line 118
+  if %t73 goto .L51   ; line 118
+  %t74 = addr @.str8   ; line 119
+  param %t74 : str   ; line 119
+  param %vowels : int   ; line 119
+  param %spaces : int   ; line 119
+  param %digits : int   ; line 119
+  %t75 = call @printf, 4   ; line 119
+  %t76 = addr buf   ; line 122
+  %t77 = addr table   ; line 122
+  %t78 = %t77 + 20   ; line 122
+  param %t76 : str   ; line 122
+  param %t78 : str   ; line 122
+  %t79 = call @strcpy, 2   ; line 122
+  %t80 = addr buf   ; line 123
+  param %t80 : str   ; line 123
+  call @reverseInPlace, 1   ; line 123
+  %t81 = addr @.str9   ; line 124
+  %t82 = addr buf   ; line 124
+  param %t81 : str   ; line 124
+  param %t82 : str   ; line 124
+  %t83 = call @printf, 2   ; line 124
+  %t84 = addr buf   ; line 125
+  %t85 = addr table   ; line 125
+  %t86 = %t85 + 40   ; line 125
+  param %t84 : str   ; line 125
+  param %t86 : str   ; line 125
+  %t87 = call @strcpy, 2   ; line 125
+  %t88 = addr buf   ; line 126
+  param %t88 : str   ; line 126
+  call @toUpper, 1   ; line 126
+  %t89 = addr @.str10   ; line 127
+  %t90 = addr buf   ; line 127
+  param %t89 : str   ; line 127
+  param %t90 : str   ; line 127
+  %t91 = call @printf, 2   ; line 127
+  %t92 = addr words   ; line 132
+  %t93 = %t92 + 0   ; line 132
+  %t94 = addr table   ; line 132
+  %t95 = %t94 + 0   ; line 132
+  store.w %t93, %t95   ; line 132
+  %t96 = addr words   ; line 133
+  %t97 = %t96 + 4   ; line 133
+  %t98 = addr table   ; line 133
+  %t99 = %t98 + 20   ; line 133
+  store.w %t97, %t99   ; line 133
+  %t100 = addr words   ; line 134
+  %t101 = %t100 + 8   ; line 134
+  %t102 = addr table   ; line 134
+  %t103 = %t102 + 40   ; line 134
+  store.w %t101, %t103   ; line 134
+  %t104 = addr words   ; line 135
+  %pp = %t104   ; line 135
+  %i = 0   ; line 136
+.L62:
+  %t105 = %i < 3   ; line 136
+  ifFalse %t105 goto .L65   ; line 136
+  %t106 = addr @.str11   ; line 136
+  %t107 = %i * 4   ; line 136
+  %t108 = %pp + %t107   ; line 136
+  %t109 = load.w %t108   ; line 136
+  param %t106 : str   ; line 136
+  param %t109 : str   ; line 136
+  %t110 = call @printf, 2   ; line 136
+  %t111 = %i + 1   ; line 136
+  %i = %t111   ; line 136
+  goto .L62   ; line 136
+.L65:
+  %t112 = addr @.str12   ; line 137
+  param %t112 : str   ; line 137
+  %t113 = call @printf, 1   ; line 137
+  %t114 = %pp + 4   ; line 138
+  %t115 = load.w %t114   ; line 138
+  %p = %t115   ; line 138
+  %t116 = addr @.str13   ; line 139
+  %t117 = %p + 0   ; line 139
+  %t118 = load.b %t117   ; line 139
+  %t119 = %p + 1   ; line 139
+  %t120 = load.b %t119   ; line 139
+  param %t116 : str   ; line 139
+  param %t118 : char   ; line 139
+  param %t120 : char   ; line 139
+  %t121 = call @printf, 3   ; line 139
+  %t122 = addr v   ; line 143
+  store.w %t122, 0   ; line 143
+  %t123 = addr v   ; line 144
+  %t124 = %t123 + 0   ; line 144
+  store.b %t124, 65   ; line 144
+  %t125 = addr @.str14   ; line 145
+  %t126 = addr v   ; line 145
+  %t127 = %t126 + 0   ; line 145
+  %t128 = load.b %t127   ; line 145
+  %t129 = addr v   ; line 145
+  %t130 = load.w %t129   ; line 145
+  %t131 = %t130 != 0   ; line 145
+  param %t125 : str   ; line 145
+  param %t128 : char   ; line 145
+  param %t131 : int   ; line 145
+  %t132 = call @printf, 3   ; line 145
+  return 0   ; line 146
+end

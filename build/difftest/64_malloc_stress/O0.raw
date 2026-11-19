@@ -1,0 +1,13 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+blocks ok: 1
+realloc: len=5000 cap=8192 ok=1
+shrunk: 9 81
+calloc sum 0
+calloc sum 0
+calloc sum 0
+list sum 499500
+malloc(0) usable: 1

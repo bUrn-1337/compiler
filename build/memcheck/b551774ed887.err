@@ -1,0 +1,6 @@
+Semantic Error [Line 5, Col 12]: 'return' with a value in a function returning void
+Semantic Error [Line 9, Col 5]: 'return' with no value in a function returning int
+Semantic Error [Line 14, Col 12]: invalid return: struct S to int
+Semantic Error [Line 19, Col 12]: incompatible pointer types in return: char * to int * (an explicit cast is required)
+
+4 errors found in 'test/errors/e08_return_type.c'; no assembly written.

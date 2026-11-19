@@ -1,0 +1,323 @@
+; Three-address intermediate representation
+; source: test/62_int_edge.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 36 bytes 37,52,100,32,47,32,37,50,100,32,61,32,37,51,100,32,32,32,37,52,100,32,37,37,32,37,50,100,32,61,32,37,51,100,10,0    ; "%4d / %2d = %3d   %4d %% %2d = %3d\n"
+str @.str1 len 23 bytes 115,104,105,102,116,115,32,37,100,32,37,100,32,37,100,32,37,100,32,37,100,10,0    ; "shifts %d %d %d %d %d\n"
+str @.str2 len 17 bytes 115,104,105,102,116,115,32,37,100,32,37,100,32,37,100,10,0    ; "shifts %d %d %d\n"
+str @.str3 len 19 bytes 51,94,51,50,32,119,114,97,112,112,101,100,32,61,32,37,100,10,0    ; "3^32 wrapped = %d\n"
+str @.str4 len 35 bytes 109,97,120,43,49,32,61,32,37,100,44,32,109,105,110,45,49,32,61,32,37,100,44,32,45,109,105,110,32,61,32,37,100,10,0    ; "max+1 = %d, min-1 = %d, -min = %d\n"
+str @.str5 len 15 bytes 109,117,108,32,119,114,97,112,32,61,32,37,100,10,0    ; "mul wrap = %d\n"
+str @.str6 len 53 bytes 99,104,97,114,32,99,32,61,32,50,48,48,32,45,62,32,37,100,59,32,99,32,43,32,49,32,61,32,37,100,59,32,99,47,50,32,61,32,37,100,59,32,99,62,62,49,32,61,32,37,100,10,0    ; "char c = 200 -> %d; c + 1 = %d; c/2 = %d; c>>1 = %d\n"
+str @.str7 len 22 bytes 49,50,55,32,43,32,49,32,97,115,32,99,104,97,114,32,61,32,37,100,10,0    ; "127 + 1 as char = %d\n"
+str @.str8 len 22 bytes 39,65,39,43,51,48,48,32,97,115,32,99,104,97,114,32,61,32,37,100,10,0    ; "'A'+300 as char = %d\n"
+str @.str9 len 29 bytes 105,110,116,32,45,62,32,99,104,97,114,32,37,100,44,32,108,111,119,32,104,97,108,102,32,37,100,10,0    ; "int -> char %d, low half %d\n"
+str @.str10 len 27 bytes 99,104,97,114,32,45,49,32,61,32,37,100,44,32,38,32,48,120,102,102,32,61,32,37,100,10,0    ; "char -1 = %d, & 0xff = %d\n"
+str @.str11 len 29 bytes 104,101,120,32,37,120,32,37,88,32,37,111,44,32,110,101,103,32,97,115,32,37,37,117,32,37,117,10,0    ; "hex %x %X %o, neg as %%u %u\n"
+str @.str12 len 21 bytes 99,111,109,112,97,114,101,32,37,100,32,37,100,32,37,100,32,37,100,10,0    ; "compare %d %d %d %d\n"
+str @.str13 len 19 bytes 108,111,103,105,99,32,37,100,32,37,100,32,37,100,32,37,100,10,0    ; "logic %d %d %d %d\n"
+str @.str14 len 17 bytes 98,105,116,111,112,115,32,37,100,32,37,100,32,37,100,10,0    ; "bitops %d %d %d\n"
+str @.str15 len 15 bytes 99,111,109,112,111,117,110,100,32,61,32,37,100,10,0    ; "compound = %d\n"
+str @.str16 len 19 bytes 112,114,101,47,112,111,115,116,32,37,100,32,37,100,32,37,100,10,0    ; "pre/post %d %d %d\n"
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @main ret int retctype "int" nparams 0 frame 32 regs 157 temps 151    ; line 5
+  .local a : type ptr ctype "int [4]" size 16 align 4 slot 0
+  .local b : type ptr ctype "int [3]" size 12 align 4 slot 16
+  .reg %i : type int ctype "int"
+  .reg %j : type int ctype "int"
+  .reg %x : type int ctype "int"
+  .reg %big : type int ctype "int"
+  .reg %c : type char ctype "char"
+  .reg %d : type char ctype "char"
+begin
+  %t6 = addr a   ; line 10
+  %t7 = %t6 + 0   ; line 10
+  store.w %t7, 7   ; line 10
+  %t8 = addr a   ; line 10
+  %t9 = %t8 + 4   ; line 10
+  store.w %t9, -7   ; line 10
+  %t10 = addr a   ; line 10
+  %t11 = %t10 + 8   ; line 10
+  store.w %t11, 100   ; line 10
+  %t12 = addr a   ; line 10
+  %t13 = %t12 + 12   ; line 10
+  store.w %t13, -100   ; line 10
+  %t14 = addr b   ; line 11
+  %t15 = %t14 + 0   ; line 11
+  store.w %t15, 2   ; line 11
+  %t16 = addr b   ; line 11
+  %t17 = %t16 + 4   ; line 11
+  store.w %t17, -2   ; line 11
+  %t18 = addr b   ; line 11
+  %t19 = %t18 + 8   ; line 11
+  store.w %t19, 3   ; line 11
+  %i = 0   ; line 12
+.L1:
+  %t20 = %i < 4   ; line 12
+  ifFalse %t20 goto .L4   ; line 12
+  %j = 0   ; line 13
+.L5:
+  %t21 = %j < 3   ; line 13
+  ifFalse %t21 goto .L8   ; line 13
+  %t22 = addr @.str0   ; line 14
+  %t23 = addr a   ; line 14
+  %t24 = %i * 4   ; line 14
+  %t25 = %t23 + %t24   ; line 14
+  %t26 = load.w %t25   ; line 14
+  %t27 = addr b   ; line 14
+  %t28 = %j * 4   ; line 14
+  %t29 = %t27 + %t28   ; line 14
+  %t30 = load.w %t29   ; line 14
+  %t31 = addr a   ; line 14
+  %t32 = %i * 4   ; line 14
+  %t33 = %t31 + %t32   ; line 14
+  %t34 = load.w %t33   ; line 14
+  %t35 = addr b   ; line 14
+  %t36 = %j * 4   ; line 14
+  %t37 = %t35 + %t36   ; line 14
+  %t38 = load.w %t37   ; line 14
+  %t39 = %t34 / %t38   ; line 14
+  %t40 = addr a   ; line 14
+  %t41 = %i * 4   ; line 14
+  %t42 = %t40 + %t41   ; line 14
+  %t43 = load.w %t42   ; line 14
+  %t44 = addr b   ; line 14
+  %t45 = %j * 4   ; line 14
+  %t46 = %t44 + %t45   ; line 14
+  %t47 = load.w %t46   ; line 14
+  %t48 = addr a   ; line 14
+  %t49 = %i * 4   ; line 14
+  %t50 = %t48 + %t49   ; line 14
+  %t51 = load.w %t50   ; line 14
+  %t52 = addr b   ; line 14
+  %t53 = %j * 4   ; line 14
+  %t54 = %t52 + %t53   ; line 14
+  %t55 = load.w %t54   ; line 14
+  %t56 = %t51 % %t55   ; line 14
+  param %t22 : str   ; line 14
+  param %t26 : int   ; line 14
+  param %t30 : int   ; line 14
+  param %t39 : int   ; line 14
+  param %t43 : int   ; line 14
+  param %t47 : int   ; line 14
+  param %t56 : int   ; line 14
+  %t57 = call @printf, 7   ; line 14
+  %t58 = %j   ; line 13
+  %t59 = %t58 + 1   ; line 13
+  %j = %t59   ; line 13
+  goto .L5   ; line 13
+.L8:
+  %t60 = %i   ; line 12
+  %t61 = %t60 + 1   ; line 12
+  %i = %t61   ; line 12
+  goto .L1   ; line 12
+.L4:
+  %x = -17   ; line 15
+  %t62 = addr @.str1   ; line 16
+  %t63 = %x >> 1   ; line 16
+  %t64 = %x >> 4   ; line 16
+  %t65 = %x >> 31   ; line 16
+  %t66 = %x << 3   ; line 16
+  %t67 = %x >> 0   ; line 16
+  param %t62 : str   ; line 16
+  param %t63 : int   ; line 16
+  param %t64 : int   ; line 16
+  param %t65 : int   ; line 16
+  param %t66 : int   ; line 16
+  param %t67 : int   ; line 16
+  %t68 = call @printf, 6   ; line 16
+  %t69 = addr @.str2   ; line 17
+  %t70 = -2147483648   ; line 17
+  %t71 = -1   ; line 17
+  %t72 = -2147483648   ; line 17
+  param %t69 : str   ; line 17
+  param %t70 : int   ; line 17
+  param %t71 : int   ; line 17
+  param %t72 : int   ; line 17
+  %t73 = call @printf, 4   ; line 17
+  %x = 1   ; line 18
+  %i = 0   ; line 19
+.L9:
+  %t74 = %i < 32   ; line 19
+  ifFalse %t74 goto .L12   ; line 19
+  %t75 = %x * 3   ; line 19
+  %x = %t75   ; line 19
+  %t76 = %i   ; line 19
+  %t77 = %t76 + 1   ; line 19
+  %i = %t77   ; line 19
+  goto .L9   ; line 19
+.L12:
+  %t78 = addr @.str3   ; line 20
+  param %t78 : str   ; line 20
+  param %x : int   ; line 20
+  %t79 = call @printf, 2   ; line 20
+  %big = 2147483647   ; line 21
+  %t80 = addr @.str4   ; line 22
+  %t81 = %big + 1   ; line 22
+  %t82 = - %big   ; line 22
+  %t83 = %t82 - 1   ; line 22
+  %t84 = %t83 - 1   ; line 22
+  %t85 = - %big   ; line 22
+  %t86 = %t85 - 1   ; line 22
+  %t87 = - %t86   ; line 22
+  param %t80 : str   ; line 22
+  param %t81 : int   ; line 22
+  param %t84 : int   ; line 22
+  param %t87 : int   ; line 22
+  %t88 = call @printf, 4   ; line 22
+  %t89 = addr @.str5   ; line 23
+  %t90 = 131073   ; line 23
+  param %t89 : str   ; line 23
+  param %t90 : int   ; line 23
+  %t91 = call @printf, 2   ; line 23
+  %c = -56   ; line 24
+  %c = sext.b %c   ; line 24
+  %d = %c   ; line 25
+  %d = sext.b %d   ; line 25
+  %t92 = addr @.str6   ; line 26
+  %t93 = %c + 1   ; line 26
+  %t94 = %c / 2   ; line 26
+  %t95 = %c >> 1   ; line 26
+  param %t92 : str   ; line 26
+  param %c : char   ; line 26
+  param %t93 : int   ; line 26
+  param %t94 : int   ; line 26
+  param %t95 : int   ; line 26
+  %t96 = call @printf, 5   ; line 26
+  %c = 127   ; line 27
+  %c = sext.b %c   ; line 27
+  %t97 = %c + 1   ; line 28
+  %t98 = sext.b %t97   ; line 28
+  %c = %t98   ; line 28
+  %c = sext.b %c   ; line 28
+  %t99 = addr @.str7   ; line 29
+  param %t99 : str   ; line 29
+  param %c : char   ; line 29
+  %t100 = call @printf, 2   ; line 29
+  %c = 109   ; line 30
+  %c = sext.b %c   ; line 30
+  %t101 = addr @.str8   ; line 31
+  param %t101 : str   ; line 31
+  param %c : char   ; line 31
+  %t102 = call @printf, 2   ; line 31
+  %i = 305419896   ; line 32
+  %t103 = sext.b %i   ; line 33
+  %c = %t103   ; line 33
+  %c = sext.b %c   ; line 33
+  %t104 = addr @.str9   ; line 34
+  %t105 = %i & 65535   ; line 34
+  param %t104 : str   ; line 34
+  param %c : char   ; line 34
+  param %t105 : int   ; line 34
+  %t106 = call @printf, 3   ; line 34
+  %c = -1   ; line 35
+  %c = sext.b %c   ; line 35
+  %t107 = addr @.str10   ; line 36
+  %t108 = %c & 255   ; line 36
+  param %t107 : str   ; line 36
+  param %c : char   ; line 36
+  param %t108 : int   ; line 36
+  %t109 = call @printf, 3   ; line 36
+  %t110 = addr @.str11   ; line 37
+  %t111 = 255   ; line 37
+  %t112 = 11259375   ; line 37
+  %t113 = 8   ; line 37
+  %t114 = -1   ; line 37
+  param %t110 : str   ; line 37
+  param %t111 : int   ; line 37
+  param %t112 : int   ; line 37
+  param %t113 : int   ; line 37
+  param %t114 : int   ; line 37
+  %t115 = call @printf, 5   ; line 37
+  %t116 = addr @.str12   ; line 38
+  %t117 = 1   ; line 38
+  %t118 = %d < 0   ; line 38
+  %t119 = 1   ; line 38
+  %t120 = 1   ; line 38
+  param %t116 : str   ; line 38
+  param %t117 : int   ; line 38
+  param %t118 : int   ; line 38
+  param %t119 : int   ; line 38
+  param %t120 : int   ; line 38
+  %t121 = call @printf, 5   ; line 38
+  %t122 = addr @.str13   ; line 39
+  %t123 = 0   ; line 39
+  %t124 = 1   ; line 39
+  %t125 = -1   ; line 39
+  %t126 = 0   ; line 39
+  param %t122 : str   ; line 39
+  param %t123 : int   ; line 39
+  param %t124 : int   ; line 39
+  param %t125 : int   ; line 39
+  param %t126 : int   ; line 39
+  %t127 = call @printf, 5   ; line 39
+  %t128 = addr @.str14   ; line 40
+  %t129 = 15   ; line 40
+  %t130 = 65295   ; line 40
+  %t131 = 61680   ; line 40
+  param %t128 : str   ; line 40
+  param %t129 : int   ; line 40
+  param %t130 : int   ; line 40
+  param %t131 : int   ; line 40
+  %t132 = call @printf, 4   ; line 40
+  %x = 10   ; line 41
+  %t133 = %x + 5   ; line 42
+  %x = %t133   ; line 42
+  %t134 = %x - 3   ; line 42
+  %x = %t134   ; line 42
+  %t135 = %x * 4   ; line 42
+  %x = %t135   ; line 42
+  %t136 = %x / 5   ; line 42
+  %x = %t136   ; line 42
+  %t137 = %x % 7   ; line 42
+  %x = %t137   ; line 42
+  %t138 = %x << 3   ; line 42
+  %x = %t138   ; line 42
+  %t139 = %x >> 1   ; line 42
+  %x = %t139   ; line 42
+  %t140 = %x & 28   ; line 42
+  %x = %t140   ; line 42
+  %t141 = %x | 1   ; line 42
+  %x = %t141   ; line 42
+  %t142 = %x ^ 3   ; line 42
+  %x = %t142   ; line 42
+  %t143 = addr @.str15   ; line 43
+  param %t143 : str   ; line 43
+  param %x : int   ; line 43
+  %t144 = call @printf, 2   ; line 43
+  %x = 5   ; line 44
+  %t145 = %x   ; line 45
+  %t146 = %t145 + 1   ; line 45
+  %x = %t146   ; line 45
+  %i = %t145   ; line 45
+  %t147 = %x   ; line 46
+  %t148 = %t147 + 1   ; line 46
+  %x = %t148   ; line 46
+  %j = %x   ; line 46
+  %t149 = addr @.str16   ; line 47
+  param %t149 : str   ; line 47
+  param %i : int   ; line 47
+  param %j : int   ; line 47
+  param %x : int   ; line 47
+  %t150 = call @printf, 4   ; line 47
+  %t151 = %x   ; line 48
+  %t152 = %t151 - 1   ; line 48
+  %x = %t152   ; line 48
+  %i = %t151   ; line 48
+  %t153 = %x   ; line 49
+  %t154 = %t153 - 1   ; line 49
+  %x = %t154   ; line 49
+  %j = %x   ; line 49
+  %t155 = addr @.str16   ; line 50
+  param %t155 : str   ; line 50
+  param %i : int   ; line 50
+  param %j : int   ; line 50
+  param %x : int   ; line 50
+  %t156 = call @printf, 4   ; line 50
+  return 253   ; line 51
+end

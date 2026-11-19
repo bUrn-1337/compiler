@@ -1,0 +1,16 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+fp=7 (*fp)=14
+sub=6
+apply=42
+global=3 10 2
+ops[0](9,3)=12
+ops[1](9,3)=6
+ops[2](9,3)=27
+c.fn=5 +
+pick=10 6
+cmp: 0 1 1 1
+null=1

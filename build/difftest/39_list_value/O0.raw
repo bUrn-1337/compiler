@@ -1,0 +1,20 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+list: [1 one 1.50] [2 two 2.25] [7 seven 7.75]
+probe survived: 7 seven 7.75
+pushed: [0 zero 0.50] [1 one 1.50] [2 two 2.25] [7 seven 7.75]
+at(2) = 2 two 2.25
+after: [0 zero 0.50] [1 one 1.50] [2 two 2.25] [7 seven 7.75]
+missing = -1 none
+clone: [0 zero 100.00] [1 one 1.50] [2 two 2.25] [7 seven 7.75]
+list: [0 zero 0.50] [1 one 1.50] [2 two 2.25] [7 seven 7.75]
+totals: 12.00 111.50
+spare = 42 zero, list head = 0, same tail = 1
+arr[0]=7 seven
+arr[1]=1 one
+arr[2]=2 two
+arr[3]=7 seven
+done

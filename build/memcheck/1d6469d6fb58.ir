@@ -1,0 +1,101 @@
+; Three-address intermediate representation
+; source: test/75_heap_errors.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 6 bytes 102,105,114,115,116,0    ; "first"
+str @.str1 len 12 bytes 114,101,117,115,101,100,58,32,37,100,10,0    ; "reused: %d\n"
+str @.str2 len 27 bytes 114,101,97,108,108,111,99,32,107,101,112,116,58,32,37,100,32,37,100,32,37,100,32,37,100,10,0    ; "realloc kept: %d %d %d %d\n"
+str @.str3 len 21 bytes 97,98,111,117,116,32,116,111,32,102,114,101,101,32,116,119,105,99,101,10,0    ; "about to free twice\n"
+str @.str4 len 13 bytes 110,111,116,32,114,101,97,99,104,101,100,10,0    ; "not reached\n"
+.enddata
+
+extern @malloc ret ptr nparams 1
+extern @strcpy ret str nparams 2
+extern @free ret void nparams 1
+extern @printf ret int nparams 1 variadic
+extern @realloc ret ptr nparams 2
+
+func @main ret int retctype "int" nparams 0 frame 0 regs 41 temps 36    ; line 5
+  .reg %a : type str ctype "char *"
+  .reg %b : type str ctype "char *"
+  .reg %c : type str ctype "char *"
+  .reg %v : type ptr ctype "int *"
+  .reg %i : type int ctype "int"
+begin
+  %t5 = 16   ; line 11
+  param %t5 : int   ; line 11
+  %t6 = call @malloc, 1   ; line 11
+  %a = %t6   ; line 11
+  %t7 = 16   ; line 12
+  param %t7 : int   ; line 12
+  %t8 = call @malloc, 1   ; line 12
+  %b = %t8   ; line 12
+  %t9 = addr @.str0   ; line 13
+  param %a : str   ; line 13
+  param %t9 : str   ; line 13
+  %t10 = call @strcpy, 2   ; line 13
+  param %a : ptr   ; line 14
+  call @free, 1   ; line 14
+  %t11 = 8   ; line 15
+  param %t11 : int   ; line 15
+  %t12 = call @malloc, 1   ; line 15
+  %c = %t12   ; line 15
+  %t13 = addr @.str1   ; line 16
+  %t14 = %c == %a   ; line 16
+  param %t13 : str   ; line 16
+  param %t14 : int   ; line 16
+  %t15 = call @printf, 2   ; line 16
+  %t16 = 16   ; line 17
+  param %t16 : int   ; line 17
+  %t17 = call @malloc, 1   ; line 17
+  %v = %t17   ; line 17
+  %i = 0   ; line 18
+.L1:
+  %t18 = %i < 4   ; line 18
+  ifFalse %t18 goto .L4   ; line 18
+  %t19 = %i * 4   ; line 18
+  %t20 = %v + %t19   ; line 18
+  %t21 = %i * 11   ; line 18
+  store.w %t20, %t21   ; line 18
+  %t22 = %i   ; line 18
+  %t23 = %t22 + 1   ; line 18
+  %i = %t23   ; line 18
+  goto .L1   ; line 18
+.L4:
+  %t24 = 400   ; line 19
+  param %v : ptr   ; line 19
+  param %t24 : int   ; line 19
+  %t25 = call @realloc, 2   ; line 19
+  %v = %t25   ; line 19
+  %t26 = addr @.str2   ; line 20
+  %t27 = %v + 0   ; line 20
+  %t28 = load.w %t27   ; line 20
+  %t29 = %v + 4   ; line 20
+  %t30 = load.w %t29   ; line 20
+  %t31 = %v + 8   ; line 20
+  %t32 = load.w %t31   ; line 20
+  %t33 = %v + 12   ; line 20
+  %t34 = load.w %t33   ; line 20
+  param %t26 : str   ; line 20
+  param %t28 : int   ; line 20
+  param %t30 : int   ; line 20
+  param %t32 : int   ; line 20
+  param %t34 : int   ; line 20
+  %t35 = call @printf, 5   ; line 20
+  %t36 = 0   ; line 21
+  param %t36 : ptr   ; line 21
+  call @free, 1   ; line 21
+  param %b : ptr   ; line 22
+  call @free, 1   ; line 22
+  %t37 = addr @.str3   ; line 23
+  param %t37 : str   ; line 23
+  %t38 = call @printf, 1   ; line 23
+  param %b : ptr   ; line 24
+  call @free, 1   ; line 24
+  %t39 = addr @.str4   ; line 25
+  param %t39 : str   ; line 25
+  %t40 = call @printf, 1   ; line 25
+  return 0   ; line 26
+end

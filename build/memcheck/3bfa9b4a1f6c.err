@@ -1,0 +1,4 @@
+Lexical Error [Line 41, Col 12]: Unterminated string literal -> '"[%e]'
+Syntax Error [Line 41, Col 13]: unexpected end of file (found '(')
+
+2 errors found in 'build/malformed/cut2_67_printf_edges.c'; no assembly written.

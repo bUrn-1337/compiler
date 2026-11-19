@@ -1,0 +1,5 @@
+Semantic Error [Line 7, Col 9]: function 'add' expects 2 arguments but 1 was given
+Semantic Error [Line 8, Col 9]: function 'add' expects 2 arguments but 3 were given
+Semantic Error [Line 9, Col 5]: function 'nothing' expects 0 arguments but 1 was given
+
+3 errors found in 'test/errors/e05_arg_count.c'; no assembly written.

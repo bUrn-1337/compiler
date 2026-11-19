@@ -1,0 +1,8 @@
+blocks ok: 1
+realloc: len=5000 cap=8192 ok=1
+shrunk: 9 81
+calloc sum 0
+calloc sum 0
+calloc sum 0
+list sum 499500
+malloc(0) usable: 1

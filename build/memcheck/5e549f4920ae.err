@@ -1,0 +1,4 @@
+Semantic Error [Line 3, Col 6]: conflicting types for 'g' (previous declaration on line 2)
+Semantic Error [Line 7, Col 9]: redeclaration of 'x' in the same scope (previous declaration on line 6)
+
+2 errors found in 'test/errors/e02_redeclaration.c'; no assembly written.

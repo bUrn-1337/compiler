@@ -1,0 +1,4 @@
+Lexical Error [Line 34, Col 12]: Unterminated string literal -> '"%c%c%c%c'
+Syntax Error [Line 34, Col 13]: unexpected end of file (found '(')
+
+2 errors found in 'build/malformed/cut2_10_unions.c'; no assembly written.

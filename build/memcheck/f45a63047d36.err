@@ -1,0 +1,3 @@
+Syntax Error [Line 45, Col 20]: unexpected end of file (found '+')
+
+1 error found in 'build/malformed/cut2_43_valid_typedef_scope.c'; no assembly written.

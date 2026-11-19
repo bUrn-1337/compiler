@@ -1,0 +1,2 @@
+3:6: Semantic: conflicting types for 'g' (previous declaration on line 2)
+7:9: Semantic: redeclaration of 'x' in the same scope (previous declaration on line 6)

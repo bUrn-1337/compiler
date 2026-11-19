@@ -1,0 +1,14 @@
+Semantic Error [Line 18, Col 5]: a function cannot return a function type
+Semantic Error [Line 19, Col 5]: a function cannot return a function type
+Semantic Error [Line 22, Col 5]: a function cannot return an array type
+Semantic Error [Line 23, Col 5]: a function cannot return an array type
+Semantic Error [Line 26, Col 5]: cannot declare an array of int (int)
+Semantic Error [Line 30, Col 3]: declaration declares nothing
+Semantic Error [Line 31, Col 6]: declaration declares nothing
+Semantic Error [Line 32, Col 6]: declaration declares nothing
+Semantic Error [Line 35, Col 1]: a function definition must declare a name
+Semantic Error [Line 40, Col 25]: a type name cannot declare the identifier 'bad'
+Semantic Error [Line 41, Col 31]: a type name cannot declare the identifier 'badp'
+Semantic Error [Line 42, Col 19]: a type name cannot declare the identifier 'cv'
+
+12 errors found in 'test/errors/e25_declarator_rules.c'; no assembly written.

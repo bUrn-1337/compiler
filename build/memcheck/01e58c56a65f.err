@@ -1,0 +1,3 @@
+Syntax Error [Line 29, Col 52]: unexpected end of file, expecting ';' or ',' (found ')')
+
+1 error found in 'build/malformed/cut3_68_file_roundtrip.c'; no assembly written.

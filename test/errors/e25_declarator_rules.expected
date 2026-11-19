@@ -1,0 +1,12 @@
+18:5: Semantic: a function cannot return a function type
+19:5: Semantic: a function cannot return a function type
+22:5: Semantic: a function cannot return an array type
+23:5: Semantic: a function cannot return an array type
+26:5: Semantic: cannot declare an array of int (int)
+30:3: Semantic: declaration declares nothing
+31:6: Semantic: declaration declares nothing
+32:6: Semantic: declaration declares nothing
+35:1: Semantic: a function definition must declare a name
+40:25: Semantic: a type name cannot declare the identifier 'bad'
+41:31: Semantic: a type name cannot declare the identifier 'badp'
+42:19: Semantic: a type name cannot declare the identifier 'cv'

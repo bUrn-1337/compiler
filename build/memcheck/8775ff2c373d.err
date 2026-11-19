@@ -1,0 +1,3 @@
+Syntax Error [Line 33, Col 11]: unexpected end of file, expecting ';' or ',' (found 'i')
+
+1 error found in 'build/malformed/cut2_19_scanf.c'; no assembly written.

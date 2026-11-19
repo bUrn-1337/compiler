@@ -1,0 +1,6 @@
+Semantic Error [Line 10, Col 9]: duplicate case value 1
+Semantic Error [Line 11, Col 9]: duplicate case value 1
+Semantic Error [Line 12, Col 9]: duplicate case value 2
+Semantic Error [Line 14, Col 9]: multiple 'default' labels in one switch
+
+4 errors found in 'test/errors/e11_dup_case.c'; no assembly written.

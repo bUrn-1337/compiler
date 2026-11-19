@@ -1,0 +1,4 @@
+Semantic Error [Line 4, Col 9]: undeclared identifier 'b' (first use in this function)
+Semantic Error [Line 5, Col 13]: undeclared identifier 'count' (first use in this function)
+
+2 errors found in 'test/errors/e01_undeclared.c'; no assembly written.

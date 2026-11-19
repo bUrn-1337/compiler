@@ -1,0 +1,12 @@
+Semantic Error [Line 17, Col 11]: invalid operands to '==': struct P and struct P
+Semantic Error [Line 18, Col 11]: invalid operands to '!=': struct P and struct P
+Semantic Error [Line 19, Col 11]: invalid operands to '+': struct P and struct P
+Semantic Error [Line 20, Col 11]: invalid operands to '*': struct P and int
+Semantic Error [Line 21, Col 9]: invalid operand to unary '-': struct P
+Semantic Error [Line 22, Col 9]: invalid operand to '!': struct P
+Semantic Error [Line 23, Col 11]: invalid operands to '==': union U and union U
+Semantic Error [Line 24, Col 9]: invalid assignment: struct Q to struct P
+Semantic Error [Line 25, Col 9]: invalid assignment: struct P to int
+Semantic Error [Line 26, Col 9]: invalid assignment: int to struct P
+
+10 errors found in 'test/errors/e20_struct_ops.c'; no assembly written.

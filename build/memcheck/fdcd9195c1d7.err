@@ -1,0 +1,3 @@
+Syntax Error [Line 19, Col 11]: unexpected end of file (found 'return')
+
+1 error found in 'build/malformed/cut3_42_valid_shadowing.c'; no assembly written.

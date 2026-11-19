@@ -1,0 +1,4 @@
+8:1: Semantic: duplicate label 'top' (first defined on line 5)
+10:5: Semantic: use of undeclared label 'nowhere'
+11:5: Semantic: use of undeclared label 'alsoMissing'
+16:5: Semantic: use of undeclared label 'top'

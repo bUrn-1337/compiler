@@ -1,0 +1,16 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+sum12 = 650
+  a=1 b=2.5 c=A d=3.25 e=-4 f=1e+10 g=0.125 h=z i=-7.75 j=100 k=1.5
+mix = 10000000283.6250
+  a=-1 b=-2.5 c=0 d=-3.25 e=4 f=-1e+10 g=-0.125 h=9 i=7.75 j=-100 k=-1.5
+mix via pointer = -9999999991.6250
+sum12 via pointer = 364
+fmix = 3.750000
+dd = -2.672
+cc = 24
+count = 344043
+nested = 727

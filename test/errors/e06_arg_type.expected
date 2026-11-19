@@ -1,0 +1,3 @@
+10:18: Semantic: invalid argument passing: struct S to int
+11:18: Semantic: incompatible pointer types in argument passing: char * to int * (an explicit cast is required)
+12:18: Semantic: invalid argument passing: int to int * (an explicit cast is required)

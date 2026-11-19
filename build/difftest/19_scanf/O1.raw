@@ -1,0 +1,18 @@
+SPIM Version 8.0 of January 8, 2010
+Copyright 1990-2010, James R. Larus.
+All Rights Reserved.
+See the file README for a full copyright notice.
+Loaded: /tmp/claude-1000/-home-burn-compiler-compiler/c5983e9b-b106-4b6d-8d15-2afd892cd20e/scratchpad/spimdeb/root/usr/lib/spim/exceptions.s
+n=1 a=7
+n=2 6 8 48
+n=1 word=[hello] len=5
+n=1 ws=1
+n=1 ch=Z
+count=4 sum=100
+10 20 30 40 
+tail n=5 sum=15
+buf=[42:mid:-7]
+a=42
+111 222
+[token]
+[x/y/3] 5

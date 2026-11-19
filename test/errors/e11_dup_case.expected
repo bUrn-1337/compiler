@@ -1,0 +1,4 @@
+10:9: Semantic: duplicate case value 1
+11:9: Semantic: duplicate case value 1
+12:9: Semantic: duplicate case value 2
+14:9: Semantic: multiple 'default' labels in one switch

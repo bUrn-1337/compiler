@@ -1,0 +1,11 @@
+text=[the quick brown fox jumps over 2 lazy dogs] len=42
+words=8
+0:the(3) 1:quick(5) 2:brown(5) 3:fox(3) 4:jumps(5) 5:over(4) 6:lazy(4) 7:dogs(4) 
+longest=quick
+fox at 3, cat at -1
+vowels=10 spaces=8 digits=1
+reversed=kciuq
+upper=BROWN
+[the][quick][brown]
+qu
+byte0=A i-nonzero=1

@@ -1,0 +1,13 @@
+innermost value=42
+middle value=-5
+global via function: 11, local: 7
+block value=101
+loop inner i=90
+loop outer i=0
+loop inner i=91
+loop outer i=1
+outer=50 helper=8
+count=50
+count=1 value=7
+then v=1
+count now 3

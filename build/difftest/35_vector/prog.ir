@@ -1,0 +1,757 @@
+; Three-address intermediate representation
+; source: test/35_vector.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 25 bytes 37,115,32,61,32,40,37,46,54,102,44,32,37,46,54,102,44,32,37,46,54,102,41,10,0    ; "%s = (%.6f, %.6f, %.6f)\n"
+str @.str1 len 2 bytes 97,0    ; "a"
+str @.str2 len 2 bytes 98,0    ; "b"
+str @.str3 len 4 bytes 97,43,98,0    ; "a+b"
+str @.str4 len 4 bytes 97,45,98,0    ; "a-b"
+str @.str5 len 3 bytes 50,97,0    ; "2a"
+str @.str6 len 4 bytes 97,120,98,0    ; "axb"
+str @.str7 len 36 bytes 97,46,98,32,61,32,37,46,54,102,32,32,124,97,124,32,61,32,37,46,56,102,32,32,124,98,124,32,61,32,37,46,56,102,10,0    ; "a.b = %.6f  |a| = %.8f  |b| = %.8f\n"
+str @.str8 len 7 bytes 117,110,105,116,32,97,0    ; "unit a"
+str @.str9 len 26 bytes 124,117,110,105,116,32,97,124,32,45,32,49,32,60,32,49,101,45,49,50,58,32,37,100,10,0    ; "|unit a| - 1 < 1e-12: %d\n"
+str @.str10 len 14 bytes 97,32,40,117,110,99,104,97,110,103,101,100,41,0    ; "a (unchanged)"
+str @.str11 len 4 bytes 115,117,109,0    ; "sum"
+str @.str12 len 26 bytes 112,101,114,112,101,110,100,105,99,117,108,97,114,58,32,37,46,54,102,32,37,46,54,102,10,0    ; "perpendicular: %.6f %.6f\n"
+str @.str13 len 7 bytes 110,101,115,116,101,100,0    ; "nested"
+str @.str14 len 34 bytes 109,101,109,98,101,114,32,111,102,32,97,32,114,101,116,117,114,110,101,100,32,118,97,108,117,101,58,32,37,46,54,102,10,0    ; "member of a returned value: %.6f\n"
+global @.fc0 size 8 align 8 type double ctype "double"
+  init.double 1.0    ; 0x3ff0000000000000
+global @.fc1 size 8 align 8 type double ctype "double"
+  init.double 0.0    ; 0x0000000000000000
+global @.fc2 size 8 align 8 type double ctype "double"
+  init.double 2.0    ; 0x4000000000000000
+global @.fc3 size 8 align 8 type double ctype "double"
+  init.double 3.0    ; 0x4008000000000000
+global @.fc4 size 8 align 8 type double ctype "double"
+  init.double -2.0    ; 0xc000000000000000
+global @.fc5 size 8 align 8 type double ctype "double"
+  init.double 0.5    ; 0x3fe0000000000000
+global @.fc6 size 8 align 8 type double ctype "double"
+  init.double 4.0    ; 0x4010000000000000
+global @.fc7 size 8 align 8 type double ctype "double"
+  init.double 9.9999999999999998e-13    ; 0x3d719799812dea11
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @vmake ret agg retctype "struct Vec" retsize 24 retalign 8 sret nparams 4 frame 24 regs 10 temps 6    ; line 6
+  .param 0 sret.ptr : type ptr ctype "struct Vec *" size 4 align 4 reg %sret.ptr sret
+  .param 1 x : type double ctype "double" size 8 align 8 reg %x
+  .param 2 y : type double ctype "double" size 8 align 8 reg %y
+  .param 3 z : type double ctype "double" size 8 align 8 reg %z
+  .local v : type agg ctype "struct Vec" size 24 align 8 slot 0
+  .reg %sret.ptr : type ptr ctype "struct Vec *"
+  .reg %x : type double ctype "double"
+  .reg %y : type double ctype "double"
+  .reg %z : type double ctype "double"
+begin
+  %t4 = addr v   ; line 8
+  store.d %t4, %x   ; line 8
+  %t5 = addr v   ; line 8
+  %t6 = %t5 + 8   ; line 8
+  store.d %t6, %y   ; line 8
+  %t7 = addr v   ; line 8
+  %t8 = %t7 + 16   ; line 8
+  store.d %t8, %z   ; line 8
+  %t9 = addr v   ; line 9
+  blkcopy %sret.ptr, %t9, size 24 align 8   ; line 9
+  return %sret.ptr   ; line 9
+end
+
+func @vadd ret agg retctype "struct Vec" retsize 24 retalign 8 sret nparams 3 frame 72 regs 24 temps 21    ; line 11
+  .param 0 sret.ptr : type ptr ctype "struct Vec *" size 4 align 4 reg %sret.ptr sret
+  .param 1 a : type agg ctype "struct Vec" size 24 align 8 byval slot 0 from reg %a.ptr
+  .param 2 b : type agg ctype "struct Vec" size 24 align 8 byval slot 24 from reg %b.ptr
+  .local a : type agg ctype "struct Vec" size 24 align 8 slot 0
+  .local b : type agg ctype "struct Vec" size 24 align 8 slot 24
+  .local .ret0 : type agg ctype "struct Vec" size 24 align 8 slot 48
+  .reg %sret.ptr : type ptr ctype "struct Vec *"
+  .reg %a.ptr : type ptr ctype "struct Vec *"
+  .reg %b.ptr : type ptr ctype "struct Vec *"
+  .reg %t5 : type double ctype "double"
+  .reg %t7 : type double ctype "double"
+  .reg %t8 : type double ctype "double"
+  .reg %t11 : type double ctype "double"
+  .reg %t14 : type double ctype "double"
+  .reg %t15 : type double ctype "double"
+  .reg %t18 : type double ctype "double"
+  .reg %t21 : type double ctype "double"
+  .reg %t22 : type double ctype "double"
+begin
+  %t3 = addr .ret0   ; line 12
+  %t4 = addr a   ; line 12
+  %t5 = load.d %t4   ; line 12
+  %t6 = addr b   ; line 12
+  %t7 = load.d %t6   ; line 12
+  %t8 = %t5 +.d %t7   ; line 12
+  %t9 = addr a   ; line 12
+  %t10 = %t9 + 8   ; line 12
+  %t11 = load.d %t10   ; line 12
+  %t12 = addr b   ; line 12
+  %t13 = %t12 + 8   ; line 12
+  %t14 = load.d %t13   ; line 12
+  %t15 = %t11 +.d %t14   ; line 12
+  %t16 = addr a   ; line 12
+  %t17 = %t16 + 16   ; line 12
+  %t18 = load.d %t17   ; line 12
+  %t19 = addr b   ; line 12
+  %t20 = %t19 + 16   ; line 12
+  %t21 = load.d %t20   ; line 12
+  %t22 = %t18 +.d %t21   ; line 12
+  param %t3 : ptr size 24 align 8 sret   ; line 12
+  param %t8 : double   ; line 12
+  param %t15 : double   ; line 12
+  param %t22 : double   ; line 12
+  %t23 = call @vmake, 4   ; line 12
+  blkcopy %sret.ptr, %t23, size 24 align 8   ; line 12
+  return %sret.ptr   ; line 12
+end
+
+func @vsub ret agg retctype "struct Vec" retsize 24 retalign 8 sret nparams 3 frame 72 regs 24 temps 21    ; line 14
+  .param 0 sret.ptr : type ptr ctype "struct Vec *" size 4 align 4 reg %sret.ptr sret
+  .param 1 a : type agg ctype "struct Vec" size 24 align 8 byval slot 0 from reg %a.ptr
+  .param 2 b : type agg ctype "struct Vec" size 24 align 8 byval slot 24 from reg %b.ptr
+  .local a : type agg ctype "struct Vec" size 24 align 8 slot 0
+  .local b : type agg ctype "struct Vec" size 24 align 8 slot 24
+  .local .ret0 : type agg ctype "struct Vec" size 24 align 8 slot 48
+  .reg %sret.ptr : type ptr ctype "struct Vec *"
+  .reg %a.ptr : type ptr ctype "struct Vec *"
+  .reg %b.ptr : type ptr ctype "struct Vec *"
+  .reg %t5 : type double ctype "double"
+  .reg %t7 : type double ctype "double"
+  .reg %t8 : type double ctype "double"
+  .reg %t11 : type double ctype "double"
+  .reg %t14 : type double ctype "double"
+  .reg %t15 : type double ctype "double"
+  .reg %t18 : type double ctype "double"
+  .reg %t21 : type double ctype "double"
+  .reg %t22 : type double ctype "double"
+begin
+  %t3 = addr .ret0   ; line 15
+  %t4 = addr a   ; line 15
+  %t5 = load.d %t4   ; line 15
+  %t6 = addr b   ; line 15
+  %t7 = load.d %t6   ; line 15
+  %t8 = %t5 -.d %t7   ; line 15
+  %t9 = addr a   ; line 15
+  %t10 = %t9 + 8   ; line 15
+  %t11 = load.d %t10   ; line 15
+  %t12 = addr b   ; line 15
+  %t13 = %t12 + 8   ; line 15
+  %t14 = load.d %t13   ; line 15
+  %t15 = %t11 -.d %t14   ; line 15
+  %t16 = addr a   ; line 15
+  %t17 = %t16 + 16   ; line 15
+  %t18 = load.d %t17   ; line 15
+  %t19 = addr b   ; line 15
+  %t20 = %t19 + 16   ; line 15
+  %t21 = load.d %t20   ; line 15
+  %t22 = %t18 -.d %t21   ; line 15
+  param %t3 : ptr size 24 align 8 sret   ; line 15
+  param %t8 : double   ; line 15
+  param %t15 : double   ; line 15
+  param %t22 : double   ; line 15
+  %t23 = call @vmake, 4   ; line 15
+  blkcopy %sret.ptr, %t23, size 24 align 8   ; line 15
+  return %sret.ptr   ; line 15
+end
+
+func @vscale ret agg retctype "struct Vec" retsize 24 retalign 8 sret nparams 3 frame 24 regs 15 temps 12    ; line 17
+  .param 0 sret.ptr : type ptr ctype "struct Vec *" size 4 align 4 reg %sret.ptr sret
+  .param 1 a : type agg ctype "struct Vec" size 24 align 8 byval slot 0 from reg %a.ptr
+  .param 2 k : type double ctype "double" size 8 align 8 reg %k
+  .local a : type agg ctype "struct Vec" size 24 align 8 slot 0
+  .reg %sret.ptr : type ptr ctype "struct Vec *"
+  .reg %a.ptr : type ptr ctype "struct Vec *"
+  .reg %k : type double ctype "double"
+  .reg %t4 : type double ctype "double"
+  .reg %t5 : type double ctype "double"
+  .reg %t8 : type double ctype "double"
+  .reg %t9 : type double ctype "double"
+  .reg %t12 : type double ctype "double"
+  .reg %t13 : type double ctype "double"
+begin
+  %t3 = addr a   ; line 18
+  %t4 = load.d %t3   ; line 18
+  %t5 = %t4 *.d %k   ; line 18
+  store.d %t3, %t5   ; line 18
+  %t6 = addr a   ; line 18
+  %t7 = %t6 + 8   ; line 18
+  %t8 = load.d %t7   ; line 18
+  %t9 = %t8 *.d %k   ; line 18
+  store.d %t7, %t9   ; line 18
+  %t10 = addr a   ; line 18
+  %t11 = %t10 + 16   ; line 18
+  %t12 = load.d %t11   ; line 18
+  %t13 = %t12 *.d %k   ; line 18
+  store.d %t11, %t13   ; line 18
+  %t14 = addr a   ; line 19
+  blkcopy %sret.ptr, %t14, size 24 align 8   ; line 19
+  return %sret.ptr   ; line 19
+end
+
+func @vdot ret double retctype "double" nparams 2 frame 48 regs 23 temps 21    ; line 21
+  .param 0 a : type agg ctype "struct Vec" size 24 align 8 byval slot 0 from reg %a.ptr
+  .param 1 b : type agg ctype "struct Vec" size 24 align 8 byval slot 24 from reg %b.ptr
+  .local a : type agg ctype "struct Vec" size 24 align 8 slot 0
+  .local b : type agg ctype "struct Vec" size 24 align 8 slot 24
+  .reg %a.ptr : type ptr ctype "struct Vec *"
+  .reg %b.ptr : type ptr ctype "struct Vec *"
+  .reg %t3 : type double ctype "double"
+  .reg %t5 : type double ctype "double"
+  .reg %t6 : type double ctype "double"
+  .reg %t9 : type double ctype "double"
+  .reg %t12 : type double ctype "double"
+  .reg %t13 : type double ctype "double"
+  .reg %t14 : type double ctype "double"
+  .reg %t17 : type double ctype "double"
+  .reg %t20 : type double ctype "double"
+  .reg %t21 : type double ctype "double"
+  .reg %t22 : type double ctype "double"
+begin
+  %t2 = addr a   ; line 21
+  %t3 = load.d %t2   ; line 21
+  %t4 = addr b   ; line 21
+  %t5 = load.d %t4   ; line 21
+  %t6 = %t3 *.d %t5   ; line 21
+  %t7 = addr a   ; line 21
+  %t8 = %t7 + 8   ; line 21
+  %t9 = load.d %t8   ; line 21
+  %t10 = addr b   ; line 21
+  %t11 = %t10 + 8   ; line 21
+  %t12 = load.d %t11   ; line 21
+  %t13 = %t9 *.d %t12   ; line 21
+  %t14 = %t6 +.d %t13   ; line 21
+  %t15 = addr a   ; line 21
+  %t16 = %t15 + 16   ; line 21
+  %t17 = load.d %t16   ; line 21
+  %t18 = addr b   ; line 21
+  %t19 = %t18 + 16   ; line 21
+  %t20 = load.d %t19   ; line 21
+  %t21 = %t17 *.d %t20   ; line 21
+  %t22 = %t14 +.d %t21   ; line 21
+  return %t22   ; line 21
+end
+
+func @vcross ret agg retctype "struct Vec" retsize 24 retalign 8 sret nparams 3 frame 72 regs 46 temps 43    ; line 22
+  .param 0 sret.ptr : type ptr ctype "struct Vec *" size 4 align 4 reg %sret.ptr sret
+  .param 1 a : type agg ctype "struct Vec" size 24 align 8 byval slot 0 from reg %a.ptr
+  .param 2 b : type agg ctype "struct Vec" size 24 align 8 byval slot 24 from reg %b.ptr
+  .local a : type agg ctype "struct Vec" size 24 align 8 slot 0
+  .local b : type agg ctype "struct Vec" size 24 align 8 slot 24
+  .local .ret0 : type agg ctype "struct Vec" size 24 align 8 slot 48
+  .reg %sret.ptr : type ptr ctype "struct Vec *"
+  .reg %a.ptr : type ptr ctype "struct Vec *"
+  .reg %b.ptr : type ptr ctype "struct Vec *"
+  .reg %t6 : type double ctype "double"
+  .reg %t9 : type double ctype "double"
+  .reg %t10 : type double ctype "double"
+  .reg %t13 : type double ctype "double"
+  .reg %t16 : type double ctype "double"
+  .reg %t17 : type double ctype "double"
+  .reg %t18 : type double ctype "double"
+  .reg %t21 : type double ctype "double"
+  .reg %t23 : type double ctype "double"
+  .reg %t24 : type double ctype "double"
+  .reg %t26 : type double ctype "double"
+  .reg %t29 : type double ctype "double"
+  .reg %t30 : type double ctype "double"
+  .reg %t31 : type double ctype "double"
+  .reg %t33 : type double ctype "double"
+  .reg %t36 : type double ctype "double"
+  .reg %t37 : type double ctype "double"
+  .reg %t40 : type double ctype "double"
+  .reg %t42 : type double ctype "double"
+  .reg %t43 : type double ctype "double"
+  .reg %t44 : type double ctype "double"
+begin
+  %t3 = addr .ret0   ; line 23
+  %t4 = addr a   ; line 23
+  %t5 = %t4 + 8   ; line 23
+  %t6 = load.d %t5   ; line 23
+  %t7 = addr b   ; line 23
+  %t8 = %t7 + 16   ; line 23
+  %t9 = load.d %t8   ; line 23
+  %t10 = %t6 *.d %t9   ; line 23
+  %t11 = addr a   ; line 23
+  %t12 = %t11 + 16   ; line 23
+  %t13 = load.d %t12   ; line 23
+  %t14 = addr b   ; line 23
+  %t15 = %t14 + 8   ; line 23
+  %t16 = load.d %t15   ; line 23
+  %t17 = %t13 *.d %t16   ; line 23
+  %t18 = %t10 -.d %t17   ; line 23
+  %t19 = addr a   ; line 24
+  %t20 = %t19 + 16   ; line 24
+  %t21 = load.d %t20   ; line 24
+  %t22 = addr b   ; line 24
+  %t23 = load.d %t22   ; line 24
+  %t24 = %t21 *.d %t23   ; line 24
+  %t25 = addr a   ; line 24
+  %t26 = load.d %t25   ; line 24
+  %t27 = addr b   ; line 24
+  %t28 = %t27 + 16   ; line 24
+  %t29 = load.d %t28   ; line 24
+  %t30 = %t26 *.d %t29   ; line 24
+  %t31 = %t24 -.d %t30   ; line 24
+  %t32 = addr a   ; line 25
+  %t33 = load.d %t32   ; line 25
+  %t34 = addr b   ; line 25
+  %t35 = %t34 + 8   ; line 25
+  %t36 = load.d %t35   ; line 25
+  %t37 = %t33 *.d %t36   ; line 25
+  %t38 = addr a   ; line 25
+  %t39 = %t38 + 8   ; line 25
+  %t40 = load.d %t39   ; line 25
+  %t41 = addr b   ; line 25
+  %t42 = load.d %t41   ; line 25
+  %t43 = %t40 *.d %t42   ; line 25
+  %t44 = %t37 -.d %t43   ; line 25
+  param %t3 : ptr size 24 align 8 sret   ; line 25
+  param %t18 : double   ; line 25
+  param %t31 : double   ; line 25
+  param %t44 : double   ; line 25
+  %t45 = call @vmake, 4   ; line 25
+  blkcopy %sret.ptr, %t45, size 24 align 8   ; line 25
+  return %sret.ptr   ; line 23
+end
+
+func @mysqrt ret double retctype "double" nparams 1 frame 0 regs 22 temps 19    ; line 27
+  .param 0 a : type double ctype "double" size 8 align 8 reg %a
+  .reg %a : type double ctype "double"
+  .reg %x : type double ctype "double"
+  .reg %i : type int ctype "int"
+  .reg %t3 : type double ctype "double"
+  .reg %t5 : type double ctype "double"
+  .reg %t8 : type double ctype "double"
+  .reg %t10 : type double ctype "double"
+  .reg %t13 : type double ctype "double"
+  .reg %t15 : type double ctype "double"
+  .reg %t16 : type double ctype "double"
+  .reg %t18 : type double ctype "double"
+  .reg %t19 : type double ctype "double"
+begin
+  %t4 = addr @.fc0   ; line 28
+  %t5 = load.d %t4   ; line 28
+  %t6 = %a >.d %t5   ; line 28
+  ifFalse %t6 goto .L2   ; line 28
+  %t3 = %a   ; line 28
+  goto .L3   ; line 28
+.L2:
+  %t7 = addr @.fc0   ; line 28
+  %t8 = load.d %t7   ; line 28
+  %t3 = %t8   ; line 28
+.L3:
+  %x = %t3   ; line 28
+  %t9 = addr @.fc1   ; line 30
+  %t10 = load.d %t9   ; line 30
+  %t11 = %a <=.d %t10   ; line 30
+  ifFalse %t11 goto .L5   ; line 30
+  %t12 = addr @.fc1   ; line 30
+  %t13 = load.d %t12   ; line 30
+  return %t13   ; line 30
+.L5:
+  %i = 0   ; line 31
+.L6:
+  %t14 = %i < 60   ; line 31
+  ifFalse %t14 goto .L9   ; line 31
+  %t15 = %a /.d %x   ; line 31
+  %t16 = %x +.d %t15   ; line 31
+  %t17 = addr @.fc2   ; line 31
+  %t18 = load.d %t17   ; line 31
+  %t19 = %t16 /.d %t18   ; line 31
+  %x = %t19   ; line 31
+  %t20 = %i   ; line 31
+  %t21 = %t20 + 1   ; line 31
+  %i = %t21   ; line 31
+  goto .L6   ; line 31
+.L9:
+  return %x   ; line 32
+end
+
+func @vlen ret double retctype "double" nparams 1 frame 24 regs 5 temps 4    ; line 34
+  .param 0 a : type agg ctype "struct Vec" size 24 align 8 byval slot 0 from reg %a.ptr
+  .local a : type agg ctype "struct Vec" size 24 align 8 slot 0
+  .reg %a.ptr : type ptr ctype "struct Vec *"
+  .reg %t3 : type double ctype "double"
+  .reg %t4 : type double ctype "double"
+begin
+  %t1 = addr a   ; line 34
+  %t2 = addr a   ; line 34
+  param %t1 : agg size 24 align 8   ; line 34
+  param %t2 : agg size 24 align 8   ; line 34
+  %t3 = call @vdot, 2   ; line 34
+  param %t3 : double   ; line 34
+  %t4 = call @mysqrt, 1   ; line 34
+  return %t4   ; line 34
+end
+
+func @vunit ret agg retctype "struct Vec" retsize 24 retalign 8 sret nparams 2 frame 48 regs 16 temps 13    ; line 35
+  .param 0 sret.ptr : type ptr ctype "struct Vec *" size 4 align 4 reg %sret.ptr sret
+  .param 1 a : type agg ctype "struct Vec" size 24 align 8 byval slot 0 from reg %a.ptr
+  .local a : type agg ctype "struct Vec" size 24 align 8 slot 0
+  .local .ret0 : type agg ctype "struct Vec" size 24 align 8 slot 24
+  .reg %sret.ptr : type ptr ctype "struct Vec *"
+  .reg %a.ptr : type ptr ctype "struct Vec *"
+  .reg %L : type double ctype "double"
+  .reg %t4 : type double ctype "double"
+  .reg %t7 : type double ctype "double"
+  .reg %t12 : type double ctype "double"
+  .reg %t13 : type double ctype "double"
+begin
+  %t3 = addr a   ; line 36
+  param %t3 : agg size 24 align 8   ; line 36
+  %t4 = call @vlen, 1   ; line 36
+  %L = %t4   ; line 36
+  %t6 = addr @.fc1   ; line 37
+  %t7 = load.d %t6   ; line 37
+  %t8 = %L >.d %t7   ; line 37
+  ifFalse %t8 goto .L11   ; line 37
+  %t9 = addr .ret0   ; line 37
+  %t10 = addr a   ; line 37
+  %t11 = addr @.fc0   ; line 37
+  %t12 = load.d %t11   ; line 37
+  %t13 = %t12 /.d %L   ; line 37
+  param %t9 : ptr size 24 align 8 sret   ; line 37
+  param %t10 : agg size 24 align 8   ; line 37
+  param %t13 : double   ; line 37
+  %t14 = call @vscale, 3   ; line 37
+  %t5 = %t14   ; line 37
+  goto .L12   ; line 37
+.L11:
+  %t15 = addr a   ; line 37
+  %t5 = %t15   ; line 37
+.L12:
+  blkcopy %sret.ptr, %t5, size 24 align 8   ; line 37
+  return %sret.ptr   ; line 37
+end
+
+func @vprint ret void retctype "void" nparams 2 frame 24 regs 12 temps 10    ; line 39
+  .param 0 tag : type str ctype "char *" size 4 align 4 reg %tag
+  .param 1 v : type agg ctype "struct Vec" size 24 align 8 byval slot 0 from reg %v.ptr
+  .local v : type agg ctype "struct Vec" size 24 align 8 slot 0
+  .reg %tag : type str ctype "char *"
+  .reg %v.ptr : type ptr ctype "struct Vec *"
+  .reg %t4 : type double ctype "double"
+  .reg %t7 : type double ctype "double"
+  .reg %t10 : type double ctype "double"
+begin
+  %t2 = addr @.str0   ; line 40
+  %t3 = addr v   ; line 40
+  %t4 = load.d %t3   ; line 40
+  %t5 = addr v   ; line 40
+  %t6 = %t5 + 8   ; line 40
+  %t7 = load.d %t6   ; line 40
+  %t8 = addr v   ; line 40
+  %t9 = %t8 + 16   ; line 40
+  %t10 = load.d %t9   ; line 40
+  param %t2 : str   ; line 40
+  param %tag : str   ; line 40
+  param %t4 : double   ; line 40
+  param %t7 : double   ; line 40
+  param %t10 : double   ; line 40
+  %t11 = call @printf, 5   ; line 40
+  return
+end
+
+func @main ret int retctype "int" nparams 0 frame 528 regs 137 temps 136    ; line 43
+  .local a : type agg ctype "struct Vec" size 24 align 8 slot 0
+  .local b : type agg ctype "struct Vec" size 24 align 8 slot 24
+  .local pts : type ptr ctype "struct Vec [3]" size 72 align 8 slot 48
+  .local acc : type agg ctype "struct Vec" size 24 align 8 slot 120
+  .local .ret0 : type agg ctype "struct Vec" size 24 align 8 slot 144
+  .local .ret1 : type agg ctype "struct Vec" size 24 align 8 slot 168
+  .local .ret2 : type agg ctype "struct Vec" size 24 align 8 slot 192
+  .local .ret3 : type agg ctype "struct Vec" size 24 align 8 slot 216
+  .local .ret4 : type agg ctype "struct Vec" size 24 align 8 slot 240
+  .local .ret5 : type agg ctype "struct Vec" size 24 align 8 slot 264
+  .local .ret6 : type agg ctype "struct Vec" size 24 align 8 slot 288
+  .local .ret7 : type agg ctype "struct Vec" size 24 align 8 slot 312
+  .local .ret8 : type agg ctype "struct Vec" size 24 align 8 slot 336
+  .local .ret9 : type agg ctype "struct Vec" size 24 align 8 slot 360
+  .local .ret10 : type agg ctype "struct Vec" size 24 align 8 slot 384
+  .local .ret11 : type agg ctype "struct Vec" size 24 align 8 slot 408
+  .local .ret12 : type agg ctype "struct Vec" size 24 align 8 slot 432
+  .local .ret13 : type agg ctype "struct Vec" size 24 align 8 slot 456
+  .local .ret14 : type agg ctype "struct Vec" size 24 align 8 slot 480
+  .local .ret15 : type agg ctype "struct Vec" size 24 align 8 slot 504
+  .reg %i : type int ctype "int"
+  .reg %t4 : type double ctype "double"
+  .reg %t6 : type double ctype "double"
+  .reg %t8 : type double ctype "double"
+  .reg %t13 : type double ctype "double"
+  .reg %t15 : type double ctype "double"
+  .reg %t17 : type double ctype "double"
+  .reg %t37 : type double ctype "double"
+  .reg %t47 : type double ctype "double"
+  .reg %t49 : type double ctype "double"
+  .reg %t51 : type double ctype "double"
+  .reg %t61 : type double ctype "double"
+  .reg %t63 : type double ctype "double"
+  .reg %t64 : type double ctype "double"
+  .reg %t66 : type double ctype "double"
+  .reg %t86 : type double ctype "double"
+  .reg %t88 : type double ctype "double"
+  .reg %t90 : type double ctype "double"
+  .reg %t108 : type double ctype "double"
+  .reg %t112 : type double ctype "double"
+  .reg %t122 : type double ctype "double"
+  .reg %t135 : type double ctype "double"
+begin
+  %t1 = addr a   ; line 44
+  memzero %t1, 24   ; line 44
+  %t2 = addr .ret0   ; line 44
+  %t3 = addr @.fc0   ; line 44
+  %t4 = load.d %t3   ; line 44
+  %t5 = addr @.fc2   ; line 44
+  %t6 = load.d %t5   ; line 44
+  %t7 = addr @.fc3   ; line 44
+  %t8 = load.d %t7   ; line 44
+  param %t2 : ptr size 24 align 8 sret   ; line 44
+  param %t4 : double   ; line 44
+  param %t6 : double   ; line 44
+  param %t8 : double   ; line 44
+  %t9 = call @vmake, 4   ; line 44
+  blkcopy %t1, %t9, size 24 align 8   ; line 44
+  %t10 = addr b   ; line 45
+  memzero %t10, 24   ; line 45
+  %t11 = addr .ret1   ; line 45
+  %t12 = addr @.fc4   ; line 45
+  %t13 = load.d %t12   ; line 45
+  %t14 = addr @.fc5   ; line 45
+  %t15 = load.d %t14   ; line 45
+  %t16 = addr @.fc6   ; line 45
+  %t17 = load.d %t16   ; line 45
+  param %t11 : ptr size 24 align 8 sret   ; line 45
+  param %t13 : double   ; line 45
+  param %t15 : double   ; line 45
+  param %t17 : double   ; line 45
+  %t18 = call @vmake, 4   ; line 45
+  blkcopy %t10, %t18, size 24 align 8   ; line 45
+  %t19 = addr @.str1   ; line 50
+  %t20 = addr a   ; line 50
+  param %t19 : str   ; line 50
+  param %t20 : agg size 24 align 8   ; line 50
+  call @vprint, 2   ; line 50
+  %t21 = addr @.str2   ; line 51
+  %t22 = addr b   ; line 51
+  param %t21 : str   ; line 51
+  param %t22 : agg size 24 align 8   ; line 51
+  call @vprint, 2   ; line 51
+  %t23 = addr @.str3   ; line 52
+  %t24 = addr .ret2   ; line 52
+  %t25 = addr a   ; line 52
+  %t26 = addr b   ; line 52
+  param %t24 : ptr size 24 align 8 sret   ; line 52
+  param %t25 : agg size 24 align 8   ; line 52
+  param %t26 : agg size 24 align 8   ; line 52
+  %t27 = call @vadd, 3   ; line 52
+  param %t23 : str   ; line 52
+  param %t27 : agg size 24 align 8   ; line 52
+  call @vprint, 2   ; line 52
+  %t28 = addr @.str4   ; line 53
+  %t29 = addr .ret3   ; line 53
+  %t30 = addr a   ; line 53
+  %t31 = addr b   ; line 53
+  param %t29 : ptr size 24 align 8 sret   ; line 53
+  param %t30 : agg size 24 align 8   ; line 53
+  param %t31 : agg size 24 align 8   ; line 53
+  %t32 = call @vsub, 3   ; line 53
+  param %t28 : str   ; line 53
+  param %t32 : agg size 24 align 8   ; line 53
+  call @vprint, 2   ; line 53
+  %t33 = addr @.str5   ; line 54
+  %t34 = addr .ret4   ; line 54
+  %t35 = addr a   ; line 54
+  %t36 = addr @.fc2   ; line 54
+  %t37 = load.d %t36   ; line 54
+  param %t34 : ptr size 24 align 8 sret   ; line 54
+  param %t35 : agg size 24 align 8   ; line 54
+  param %t37 : double   ; line 54
+  %t38 = call @vscale, 3   ; line 54
+  param %t33 : str   ; line 54
+  param %t38 : agg size 24 align 8   ; line 54
+  call @vprint, 2   ; line 54
+  %t39 = addr @.str6   ; line 55
+  %t40 = addr .ret5   ; line 55
+  %t41 = addr a   ; line 55
+  %t42 = addr b   ; line 55
+  param %t40 : ptr size 24 align 8 sret   ; line 55
+  param %t41 : agg size 24 align 8   ; line 55
+  param %t42 : agg size 24 align 8   ; line 55
+  %t43 = call @vcross, 3   ; line 55
+  param %t39 : str   ; line 55
+  param %t43 : agg size 24 align 8   ; line 55
+  call @vprint, 2   ; line 55
+  %t44 = addr @.str7   ; line 56
+  %t45 = addr a   ; line 56
+  %t46 = addr b   ; line 56
+  param %t45 : agg size 24 align 8   ; line 56
+  param %t46 : agg size 24 align 8   ; line 56
+  %t47 = call @vdot, 2   ; line 56
+  %t48 = addr a   ; line 56
+  param %t48 : agg size 24 align 8   ; line 56
+  %t49 = call @vlen, 1   ; line 56
+  %t50 = addr b   ; line 56
+  param %t50 : agg size 24 align 8   ; line 56
+  %t51 = call @vlen, 1   ; line 56
+  param %t44 : str   ; line 56
+  param %t47 : double   ; line 56
+  param %t49 : double   ; line 56
+  param %t51 : double   ; line 56
+  %t52 = call @printf, 4   ; line 56
+  %t53 = addr @.str8   ; line 57
+  %t54 = addr .ret6   ; line 57
+  %t55 = addr a   ; line 57
+  param %t54 : ptr size 24 align 8 sret   ; line 57
+  param %t55 : agg size 24 align 8   ; line 57
+  %t56 = call @vunit, 2   ; line 57
+  param %t53 : str   ; line 57
+  param %t56 : agg size 24 align 8   ; line 57
+  call @vprint, 2   ; line 57
+  %t57 = addr @.str9   ; line 58
+  %t58 = addr .ret7   ; line 58
+  %t59 = addr a   ; line 58
+  param %t58 : ptr size 24 align 8 sret   ; line 58
+  param %t59 : agg size 24 align 8   ; line 58
+  %t60 = call @vunit, 2   ; line 58
+  param %t60 : agg size 24 align 8   ; line 58
+  %t61 = call @vlen, 1   ; line 58
+  %t62 = addr @.fc0   ; line 58
+  %t63 = load.d %t62   ; line 58
+  %t64 = %t61 -.d %t63   ; line 58
+  %t65 = addr @.fc7   ; line 58
+  %t66 = load.d %t65   ; line 58
+  %t67 = %t64 <.d %t66   ; line 58
+  param %t57 : str   ; line 58
+  param %t67 : int   ; line 58
+  %t68 = call @printf, 2   ; line 58
+  %t69 = addr @.str10   ; line 59
+  %t70 = addr a   ; line 59
+  param %t69 : str   ; line 59
+  param %t70 : agg size 24 align 8   ; line 59
+  call @vprint, 2   ; line 59
+  %t71 = addr pts   ; line 62
+  %t72 = %t71 + 0   ; line 62
+  %t73 = addr a   ; line 62
+  blkcopy %t72, %t73, size 24 align 8   ; line 62
+  %t74 = addr pts   ; line 62
+  %t75 = %t74 + 24   ; line 62
+  %t76 = addr b   ; line 62
+  blkcopy %t75, %t76, size 24 align 8   ; line 62
+  %t77 = addr pts   ; line 62
+  %t78 = %t77 + 48   ; line 62
+  %t79 = addr .ret8   ; line 62
+  %t80 = addr a   ; line 62
+  %t81 = addr b   ; line 62
+  param %t79 : ptr size 24 align 8 sret   ; line 62
+  param %t80 : agg size 24 align 8   ; line 62
+  param %t81 : agg size 24 align 8   ; line 62
+  %t82 = call @vcross, 3   ; line 62
+  blkcopy %t78, %t82, size 24 align 8   ; line 62
+  %t83 = addr acc   ; line 63
+  %t84 = addr .ret9   ; line 63
+  %t85 = addr @.fc1   ; line 63
+  %t86 = load.d %t85   ; line 63
+  %t87 = addr @.fc1   ; line 63
+  %t88 = load.d %t87   ; line 63
+  %t89 = addr @.fc1   ; line 63
+  %t90 = load.d %t89   ; line 63
+  param %t84 : ptr size 24 align 8 sret   ; line 63
+  param %t86 : double   ; line 63
+  param %t88 : double   ; line 63
+  param %t90 : double   ; line 63
+  %t91 = call @vmake, 4   ; line 63
+  blkcopy %t83, %t91, size 24 align 8   ; line 63
+  %i = 0   ; line 64
+.L13:
+  %t92 = %i < 3   ; line 64
+  ifFalse %t92 goto .L16   ; line 64
+  %t93 = addr acc   ; line 64
+  %t94 = addr .ret10   ; line 64
+  %t95 = addr acc   ; line 64
+  %t96 = addr pts   ; line 64
+  %t97 = %i * 24   ; line 64
+  %t98 = %t96 + %t97   ; line 64
+  param %t94 : ptr size 24 align 8 sret   ; line 64
+  param %t95 : agg size 24 align 8   ; line 64
+  param %t98 : agg size 24 align 8   ; line 64
+  %t99 = call @vadd, 3   ; line 64
+  blkcopy %t93, %t99, size 24 align 8   ; line 64
+  %t100 = %i   ; line 64
+  %t101 = %t100 + 1   ; line 64
+  %i = %t101   ; line 64
+  goto .L13   ; line 64
+.L16:
+  %t102 = addr @.str11   ; line 65
+  %t103 = addr acc   ; line 65
+  param %t102 : str   ; line 65
+  param %t103 : agg size 24 align 8   ; line 65
+  call @vprint, 2   ; line 65
+  %t104 = addr @.str12   ; line 66
+  %t105 = addr pts   ; line 66
+  %t106 = %t105 + 48   ; line 66
+  %t107 = addr a   ; line 66
+  param %t106 : agg size 24 align 8   ; line 66
+  param %t107 : agg size 24 align 8   ; line 66
+  %t108 = call @vdot, 2   ; line 66
+  %t109 = addr pts   ; line 66
+  %t110 = %t109 + 48   ; line 66
+  %t111 = addr b   ; line 66
+  param %t110 : agg size 24 align 8   ; line 66
+  param %t111 : agg size 24 align 8   ; line 66
+  %t112 = call @vdot, 2   ; line 66
+  param %t104 : str   ; line 66
+  param %t108 : double   ; line 66
+  param %t112 : double   ; line 66
+  %t113 = call @printf, 3   ; line 66
+  %t114 = addr @.str13   ; line 69
+  %t115 = addr .ret11   ; line 69
+  %t116 = addr .ret12   ; line 69
+  %t117 = addr .ret13   ; line 69
+  %t118 = addr a   ; line 69
+  %t119 = addr b   ; line 69
+  param %t117 : ptr size 24 align 8 sret   ; line 69
+  param %t118 : agg size 24 align 8   ; line 69
+  param %t119 : agg size 24 align 8   ; line 69
+  %t120 = call @vadd, 3   ; line 69
+  %t121 = addr @.fc5   ; line 69
+  %t122 = load.d %t121   ; line 69
+  param %t116 : ptr size 24 align 8 sret   ; line 69
+  param %t120 : agg size 24 align 8   ; line 69
+  param %t122 : double   ; line 69
+  %t123 = call @vscale, 3   ; line 69
+  %t124 = addr .ret14   ; line 69
+  %t125 = addr b   ; line 69
+  %t126 = addr a   ; line 69
+  param %t124 : ptr size 24 align 8 sret   ; line 69
+  param %t125 : agg size 24 align 8   ; line 69
+  param %t126 : agg size 24 align 8   ; line 69
+  %t127 = call @vsub, 3   ; line 69
+  param %t115 : ptr size 24 align 8 sret   ; line 69
+  param %t123 : agg size 24 align 8   ; line 69
+  param %t127 : agg size 24 align 8   ; line 69
+  %t128 = call @vadd, 3   ; line 69
+  param %t114 : str   ; line 69
+  param %t128 : agg size 24 align 8   ; line 69
+  call @vprint, 2   ; line 69
+  %t129 = addr @.str14   ; line 70
+  %t130 = addr .ret15   ; line 70
+  %t131 = addr a   ; line 70
+  %t132 = addr b   ; line 70
+  param %t130 : ptr size 24 align 8 sret   ; line 70
+  param %t131 : agg size 24 align 8   ; line 70
+  param %t132 : agg size 24 align 8   ; line 70
+  %t133 = call @vcross, 3   ; line 70
+  %t134 = %t133 + 16   ; line 70
+  %t135 = load.d %t134   ; line 70
+  param %t129 : str   ; line 70
+  param %t135 : double   ; line 70
+  %t136 = call @printf, 2   ; line 70
+  return 0   ; line 71
+end

@@ -1,0 +1,3 @@
+4:5: Semantic: 'break' outside of a loop or switch statement
+5:5: Semantic: 'continue' outside of a loop statement
+11:13: Semantic: 'continue' outside of a loop statement

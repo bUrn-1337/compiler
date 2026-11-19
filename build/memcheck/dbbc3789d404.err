@@ -1,0 +1,12 @@
+Semantic Error [Line 8, Col 11]: invalid operands to '%': float and int (this operator requires an integer type)
+Semantic Error [Line 9, Col 11]: invalid operands to '%': int and double (this operator requires an integer type)
+Semantic Error [Line 10, Col 11]: invalid operands to '<<': float and int (this operator requires an integer type)
+Semantic Error [Line 11, Col 11]: invalid operands to '>>': int and double (this operator requires an integer type)
+Semantic Error [Line 12, Col 11]: invalid operands to '&': float and int (this operator requires an integer type)
+Semantic Error [Line 13, Col 11]: invalid operands to '|': float and int (this operator requires an integer type)
+Semantic Error [Line 14, Col 11]: invalid operands to '^': float and int (this operator requires an integer type)
+Semantic Error [Line 15, Col 9]: invalid operand to unary '~': double (this operator requires an integer type)
+Semantic Error [Line 16, Col 7]: invalid operands to '%=': float and int (this operator requires an integer type)
+Semantic Error [Line 17, Col 7]: invalid operands to '<<=': double and int (this operator requires an integer type)
+
+10 errors found in 'test/errors/e18_float_int_ops.c'; no assembly written.

@@ -1,0 +1,105 @@
+; Three-address intermediate representation
+; source: test/16_goto.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 15 bytes 98,97,99,107,119,97,114,100,32,105,61,37,100,10,0    ; "backward i=%d\n"
+str @.str1 len 14 bytes 102,111,114,119,97,114,100,32,110,61,37,100,10,0    ; "forward n=%d\n"
+str @.str2 len 10 bytes 102,111,117,110,100,61,37,100,10,0    ; "found=%d\n"
+str @.str3 len 5 bytes 105,37,100,32,0    ; "i%d "
+str @.str4 len 2 bytes 10,0    ; "\n"
+str @.str5 len 13 bytes 110,111,116,32,114,101,97,99,104,101,100,10,0    ; "not reached\n"
+str @.str6 len 6 bytes 100,111,110,101,10,0    ; "done\n"
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @main ret int retctype "int" nparams 0 frame 0 regs 30 temps 26    ; line 4
+  .reg %i : type int ctype "int"
+  .reg %j : type int ctype "int"
+  .reg %n : type int ctype "int"
+  .reg %found : type int ctype "int"
+begin
+  %i = 0   ; line 11
+.L1:
+  %t4 = %i + 1   ; line 13
+  %i = %t4   ; line 13
+  %t5 = %i < 5   ; line 14
+  ifFalse %t5 goto .L3   ; line 14
+  goto .L1   ; line 14
+.L3:
+  %t6 = addr @.str0   ; line 15
+  param %t6 : str   ; line 15
+  param %i : int   ; line 15
+  %t7 = call @printf, 2   ; line 15
+  %n = 0   ; line 18
+  goto .L4   ; line 19
+  %n = 999   ; line 20
+.L4:
+  %t8 = addr @.str1   ; line 22
+  param %t8 : str   ; line 22
+  param %n : int   ; line 22
+  %t9 = call @printf, 2   ; line 22
+  %found = 0   ; line 25
+  %i = 0   ; line 26
+.L5:
+  %t10 = %i < 5   ; line 26
+  ifFalse %t10 goto .L8   ; line 26
+  %j = 0   ; line 27
+.L9:
+  %t11 = %j < 5   ; line 27
+  ifFalse %t11 goto .L12   ; line 27
+  %t12 = %i * %j   ; line 28
+  %t13 = %t12 == 6   ; line 28
+  ifFalse %t13 goto .L14   ; line 28
+  %t14 = %i * 10   ; line 28
+  %t15 = %t14 + %j   ; line 28
+  %found = %t15   ; line 28
+  goto .L15   ; line 28
+.L14:
+  %t16 = %j + 1   ; line 27
+  %j = %t16   ; line 27
+  goto .L9   ; line 27
+.L12:
+  %t17 = %i + 1   ; line 26
+  %i = %t17   ; line 26
+  goto .L5   ; line 26
+.L8:
+.L15:
+  %t18 = addr @.str2   ; line 30
+  param %t18 : str   ; line 30
+  param %found : int   ; line 30
+  %t19 = call @printf, 2   ; line 30
+  %i = 0   ; line 33
+.L16:
+  %t20 = %i < 3   ; line 35
+  ifFalse %t20 goto .L18   ; line 35
+  %t21 = addr @.str3   ; line 35
+  param %t21 : str   ; line 35
+  param %i : int   ; line 35
+  %t22 = call @printf, 2   ; line 35
+  %t23 = %i + 1   ; line 35
+  %i = %t23   ; line 35
+  goto .L16   ; line 35
+.L18:
+  %t24 = addr @.str4   ; line 36
+  param %t24 : str   ; line 36
+  %t25 = call @printf, 1   ; line 36
+  %n = 1   ; line 39
+  ifFalse %n goto .L20   ; line 40
+  goto .L21   ; line 40
+.L20:
+  %t26 = addr @.str5   ; line 41
+  param %t26 : str   ; line 41
+  %t27 = call @printf, 1   ; line 41
+.L21:
+.L22:
+  %t28 = addr @.str6   ; line 44
+  param %t28 : str   ; line 44
+  %t29 = call @printf, 1   ; line 44
+  goto .L24   ; line 45
+  goto .L22   ; line 45
+.L24:
+  return 0   ; line 46
+end

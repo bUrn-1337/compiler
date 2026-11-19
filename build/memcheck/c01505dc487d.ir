@@ -1,0 +1,251 @@
+; Three-address intermediate representation
+; source: test/02_logical.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 13 bytes 37,100,32,99,97,108,108,115,61,37,100,10,0    ; "%d calls=%d\n"
+str @.str1 len 5 bytes 121,101,115,10,0    ; "yes\n"
+str @.str2 len 4 bytes 110,111,10,0    ; "no\n"
+str @.str3 len 10 bytes 99,97,108,108,115,61,37,100,10,0    ; "calls=%d\n"
+str @.str4 len 10 bytes 37,100,32,37,100,32,37,100,10,0    ; "%d %d %d\n"
+str @.str5 len 4 bytes 37,100,10,0    ; "%d\n"
+global @calls size 4 align 4 type int ctype "int"
+  init.zero 4
+.enddata
+
+extern @printf ret int nparams 1 variadic
+
+func @tick ret int retctype "int" nparams 1 frame 0 regs 5 temps 4    ; line 6
+  .param 0 v : type int ctype "int" size 4 align 4 reg %v
+  .reg %v : type int ctype "int"
+begin
+  %t1 = addr @calls   ; line 7
+  %t2 = addr @calls   ; line 7
+  %t3 = load.w %t2   ; line 7
+  %t4 = %t3 + 1   ; line 7
+  store.w %t1, %t4   ; line 7
+  return %v   ; line 8
+end
+
+func @main ret int retctype "int" nparams 0 frame 0 regs 100 temps 99    ; line 11
+  .reg %r : type int ctype "int"
+begin
+  %t1 = addr @calls   ; line 14
+  store.w %t1, 0   ; line 14
+  %t3 = 0   ; line 15
+  param %t3 : int   ; line 15
+  %t4 = call @tick, 1   ; line 15
+  ifFalse %t4 goto .L2   ; line 15
+  %t5 = 1   ; line 15
+  param %t5 : int   ; line 15
+  %t6 = call @tick, 1   ; line 15
+  ifFalse %t6 goto .L2   ; line 15
+  %t2 = 1   ; line 15
+  goto .L3   ; line 15
+.L2:
+  %t2 = 0   ; line 15
+.L3:
+  %r = %t2   ; line 15
+  %t7 = addr @.str0   ; line 16
+  %t8 = addr @calls   ; line 16
+  %t9 = load.w %t8   ; line 16
+  param %t7 : str   ; line 16
+  param %r : int   ; line 16
+  param %t9 : int   ; line 16
+  %t10 = call @printf, 3   ; line 16
+  %t11 = addr @calls   ; line 18
+  store.w %t11, 0   ; line 18
+  %t13 = 1   ; line 19
+  param %t13 : int   ; line 19
+  %t14 = call @tick, 1   ; line 19
+  ifFalse %t14 goto .L5   ; line 19
+  %t15 = 0   ; line 19
+  param %t15 : int   ; line 19
+  %t16 = call @tick, 1   ; line 19
+  ifFalse %t16 goto .L5   ; line 19
+  %t12 = 1   ; line 19
+  goto .L6   ; line 19
+.L5:
+  %t12 = 0   ; line 19
+.L6:
+  %r = %t12   ; line 19
+  %t17 = addr @.str0   ; line 20
+  %t18 = addr @calls   ; line 20
+  %t19 = load.w %t18   ; line 20
+  param %t17 : str   ; line 20
+  param %r : int   ; line 20
+  param %t19 : int   ; line 20
+  %t20 = call @printf, 3   ; line 20
+  %t21 = addr @calls   ; line 22
+  store.w %t21, 0   ; line 22
+  %t23 = 1   ; line 23
+  param %t23 : int   ; line 23
+  %t24 = call @tick, 1   ; line 23
+  if %t24 goto .L7   ; line 23
+  %t25 = 1   ; line 23
+  param %t25 : int   ; line 23
+  %t26 = call @tick, 1   ; line 23
+  ifFalse %t26 goto .L8   ; line 23
+.L7:
+  %t22 = 1   ; line 23
+  goto .L9   ; line 23
+.L8:
+  %t22 = 0   ; line 23
+.L9:
+  %r = %t22   ; line 23
+  %t27 = addr @.str0   ; line 24
+  %t28 = addr @calls   ; line 24
+  %t29 = load.w %t28   ; line 24
+  param %t27 : str   ; line 24
+  param %r : int   ; line 24
+  param %t29 : int   ; line 24
+  %t30 = call @printf, 3   ; line 24
+  %t31 = addr @calls   ; line 26
+  store.w %t31, 0   ; line 26
+  %t33 = 0   ; line 27
+  param %t33 : int   ; line 27
+  %t34 = call @tick, 1   ; line 27
+  if %t34 goto .L10   ; line 27
+  %t35 = 7   ; line 27
+  param %t35 : int   ; line 27
+  %t36 = call @tick, 1   ; line 27
+  ifFalse %t36 goto .L11   ; line 27
+.L10:
+  %t32 = 1   ; line 27
+  goto .L12   ; line 27
+.L11:
+  %t32 = 0   ; line 27
+.L12:
+  %r = %t32   ; line 27
+  %t37 = addr @.str0   ; line 28
+  %t38 = addr @calls   ; line 28
+  %t39 = load.w %t38   ; line 28
+  param %t37 : str   ; line 28
+  param %r : int   ; line 28
+  param %t39 : int   ; line 28
+  %t40 = call @printf, 3   ; line 28
+  %t41 = addr @calls   ; line 30
+  store.w %t41, 0   ; line 30
+  %t43 = 1   ; line 31
+  param %t43 : int   ; line 31
+  %t44 = call @tick, 1   ; line 31
+  ifFalse %t44 goto .L14   ; line 31
+  %t45 = 10   ; line 31
+  param %t45 : int   ; line 31
+  %t46 = call @tick, 1   ; line 31
+  %t42 = %t46   ; line 31
+  goto .L15   ; line 31
+.L14:
+  %t47 = 20   ; line 31
+  param %t47 : int   ; line 31
+  %t48 = call @tick, 1   ; line 31
+  %t42 = %t48   ; line 31
+.L15:
+  %r = %t42   ; line 31
+  %t49 = addr @.str0   ; line 32
+  %t50 = addr @calls   ; line 32
+  %t51 = load.w %t50   ; line 32
+  param %t49 : str   ; line 32
+  param %r : int   ; line 32
+  param %t51 : int   ; line 32
+  %t52 = call @printf, 3   ; line 32
+  %t53 = addr @calls   ; line 34
+  store.w %t53, 0   ; line 34
+  %t55 = 0   ; line 35
+  param %t55 : int   ; line 35
+  %t56 = call @tick, 1   ; line 35
+  ifFalse %t56 goto .L17   ; line 35
+  %t57 = 10   ; line 35
+  param %t57 : int   ; line 35
+  %t58 = call @tick, 1   ; line 35
+  %t54 = %t58   ; line 35
+  goto .L18   ; line 35
+.L17:
+  %t59 = 20   ; line 35
+  param %t59 : int   ; line 35
+  %t60 = call @tick, 1   ; line 35
+  %t54 = %t60   ; line 35
+.L18:
+  %r = %t54   ; line 35
+  %t61 = addr @.str0   ; line 36
+  %t62 = addr @calls   ; line 36
+  %t63 = load.w %t62   ; line 36
+  param %t61 : str   ; line 36
+  param %r : int   ; line 36
+  param %t63 : int   ; line 36
+  %t64 = call @printf, 3   ; line 36
+  %t65 = addr @calls   ; line 39
+  store.w %t65, 0   ; line 39
+  %t66 = 0   ; line 40
+  param %t66 : int   ; line 40
+  %t67 = call @tick, 1   ; line 40
+  ifFalse %t67 goto .L20   ; line 40
+  %t68 = 1   ; line 40
+  param %t68 : int   ; line 40
+  %t69 = call @tick, 1   ; line 40
+  ifFalse %t69 goto .L20   ; line 40
+  %t70 = addr @.str1   ; line 40
+  param %t70 : str   ; line 40
+  %t71 = call @printf, 1   ; line 40
+  goto .L21   ; line 40
+.L20:
+  %t72 = addr @.str2   ; line 40
+  param %t72 : str   ; line 40
+  %t73 = call @printf, 1   ; line 40
+.L21:
+  %t74 = addr @.str3   ; line 41
+  %t75 = addr @calls   ; line 41
+  %t76 = load.w %t75   ; line 41
+  param %t74 : str   ; line 41
+  param %t76 : int   ; line 41
+  %t77 = call @printf, 2   ; line 41
+  %t78 = addr @.str4   ; line 44
+  %t79 = 1   ; line 44
+  %t80 = 1   ; line 44
+  %t81 = 0   ; line 44
+  param %t78 : str   ; line 44
+  param %t79 : int   ; line 44
+  param %t80 : int   ; line 44
+  param %t81 : int   ; line 44
+  %t82 = call @printf, 4   ; line 44
+  %t83 = addr @.str5   ; line 45
+  %t84 = 1   ; line 45
+  param %t83 : str   ; line 45
+  param %t84 : int   ; line 45
+  %t85 = call @printf, 2   ; line 45
+  %t86 = addr @calls   ; line 48
+  store.w %t86, 0   ; line 48
+  %t88 = 1   ; line 49
+  param %t88 : int   ; line 49
+  %t89 = call @tick, 1   ; line 49
+  ifFalse %t89 goto .L25   ; line 49
+  %t90 = 0   ; line 49
+  param %t90 : int   ; line 49
+  %t91 = call @tick, 1   ; line 49
+  if %t91 goto .L22   ; line 49
+.L25:
+  %t92 = 1   ; line 49
+  param %t92 : int   ; line 49
+  %t93 = call @tick, 1   ; line 49
+  ifFalse %t93 goto .L23   ; line 49
+  %t94 = 2   ; line 49
+  param %t94 : int   ; line 49
+  %t95 = call @tick, 1   ; line 49
+  ifFalse %t95 goto .L23   ; line 49
+.L22:
+  %t87 = 1   ; line 49
+  goto .L24   ; line 49
+.L23:
+  %t87 = 0   ; line 49
+.L24:
+  %r = %t87   ; line 49
+  %t96 = addr @.str0   ; line 50
+  %t97 = addr @calls   ; line 50
+  %t98 = load.w %t97   ; line 50
+  param %t96 : str   ; line 50
+  param %r : int   ; line 50
+  param %t98 : int   ; line 50
+  %t99 = call @printf, 3   ; line 50
+  return 0   ; line 51
+end

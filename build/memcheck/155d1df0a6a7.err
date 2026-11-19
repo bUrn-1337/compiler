@@ -1,0 +1,4 @@
+Lexical Error [Line 1, Col 26]: Unterminated character literal -> ''ab; return 0; }'
+Syntax Error [Line 1, Col 27]: unexpected end of file (found '=')
+
+2 errors found in 'build/malformed/bad_char.c'; no assembly written.

@@ -1,0 +1,12 @@
+Semantic Error [Line 21, Col 11]: invalid operands to '%': float and int (this operator requires an integer type)
+Semantic Error [Line 22, Col 9]: invalid operand to unary '~': double (this operator requires an integer type)
+Semantic Error [Line 23, Col 6]: array subscript must have integer type, got double
+Semantic Error [Line 24, Col 11]: invalid operands to '+': struct P and struct Q
+Semantic Error [Line 25, Col 9]: invalid assignment: struct Q to struct P
+Semantic Error [Line 26, Col 11]: invalid argument passing: float to struct P
+Semantic Error [Line 27, Col 9]: function 'fp' expects 2 arguments but 1 was given
+Semantic Error [Line 28, Col 10]: incompatible pointer types in assignment: double (*)(double) to int (*)(int, int) (an explicit cast is required)
+Semantic Error [Line 29, Col 10]: invalid assignment: int to int (*)(int, int) (an explicit cast is required)
+Semantic Error [Line 30, Col 9]: called object 'i' is not a function or function pointer
+
+10 errors found in 'test/errors/e24_mixed_new.c'; no assembly written.

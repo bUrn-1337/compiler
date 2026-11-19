@@ -1,0 +1,5 @@
+Semantic Error [Line 14, Col 10]: cannot index a value of type int (an array or pointer is required)
+Semantic Error [Line 15, Col 10]: cannot index a value of type struct S (an array or pointer is required)
+Semantic Error [Line 16, Col 10]: array subscript must have integer type, got int *
+
+3 errors found in 'test/errors/e15_index.c'; no assembly written.

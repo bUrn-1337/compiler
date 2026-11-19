@@ -1,0 +1,4 @@
+Lexical Error [Line 31, Col 5]: Unterminated block comment -> '/*'
+Syntax Error [Line 31, Col 41]: unexpected end of file (found ';')
+
+2 errors found in 'build/malformed/cut3_48_valid_operators.c'; no assembly written.

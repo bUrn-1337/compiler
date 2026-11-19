@@ -1,0 +1,4 @@
+Lexical Error [Line 31, Col 33]: Unterminated block comment -> '/*'
+Syntax Error [Line 31, Col 63]: unexpected end of file (found ';')
+
+2 errors found in 'build/malformed/cut2_42_valid_shadowing.c'; no assembly written.

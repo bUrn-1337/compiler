@@ -1,0 +1,520 @@
+; Three-address intermediate representation
+; source: test/39_list_value.c
+; target model: 32-bit MIPS -- char=1, int=4, pointer=4, big-endian-agnostic
+; see docs/IR-DESIGN.md for the full instruction specification
+
+.data
+str @.str0 len 5 bytes 110,111,110,101,0    ; "none"
+str @.str1 len 4 bytes 37,115,58,0    ; "%s:"
+str @.str2 len 14 bytes 32,91,37,100,32,37,115,32,37,46,50,102,93,0    ; " [%d %s %.2f]"
+str @.str3 len 2 bytes 10,0    ; "\n"
+str @.str4 len 6 bytes 115,101,118,101,110,0    ; "seven"
+str @.str5 len 4 bytes 111,110,101,0    ; "one"
+str @.str6 len 4 bytes 116,119,111,0    ; "two"
+str @.str7 len 5 bytes 108,105,115,116,0    ; "list"
+str @.str8 len 28 bytes 112,114,111,98,101,32,115,117,114,118,105,118,101,100,58,32,37,100,32,37,115,32,37,46,50,102,10,0    ; "probe survived: %d %s %.2f\n"
+str @.str9 len 5 bytes 122,101,114,111,0    ; "zero"
+str @.str10 len 7 bytes 112,117,115,104,101,100,0    ; "pushed"
+str @.str11 len 20 bytes 97,116,40,50,41,32,61,32,37,100,32,37,115,32,37,46,50,102,10,0    ; "at(2) = %d %s %.2f\n"
+str @.str12 len 6 bytes 97,102,116,101,114,0    ; "after"
+str @.str13 len 17 bytes 109,105,115,115,105,110,103,32,61,32,37,100,32,37,115,10,0    ; "missing = %d %s\n"
+str @.str14 len 6 bytes 99,108,111,110,101,0    ; "clone"
+str @.str15 len 19 bytes 116,111,116,97,108,115,58,32,37,46,50,102,32,37,46,50,102,10,0    ; "totals: %.2f %.2f\n"
+str @.str16 len 47 bytes 115,112,97,114,101,32,61,32,37,100,32,37,115,44,32,108,105,115,116,32,104,101,97,100,32,61,32,37,100,44,32,115,97,109,101,32,116,97,105,108,32,61,32,37,100,10,0    ; "spare = %d %s, list head = %d, same tail = %d\n"
+str @.str17 len 15 bytes 97,114,114,91,37,100,93,61,37,100,32,37,115,10,0    ; "arr[%d]=%d %s\n"
+str @.str18 len 6 bytes 100,111,110,101,10,0    ; "done\n"
+global @.fc0 size 8 align 8 type double ctype "double"
+  init.double 0.0    ; 0x0000000000000000
+global @.fc1 size 8 align 8 type double ctype "double"
+  init.double 7.75    ; 0x401f000000000000
+global @.fc2 size 8 align 8 type double ctype "double"
+  init.double 1.5    ; 0x3ff8000000000000
+global @.fc3 size 8 align 8 type double ctype "double"
+  init.double 2.25    ; 0x4002000000000000
+global @.fc4 size 8 align 8 type double ctype "double"
+  init.double 0.5    ; 0x3fe0000000000000
+global @.fc5 size 8 align 8 type double ctype "double"
+  init.double 100.0    ; 0x4059000000000000
+.enddata
+
+extern @strcpy ret str nparams 2
+extern @malloc ret ptr nparams 1
+extern @printf ret int nparams 1 variadic
+extern @free ret void nparams 1
+
+func @mkItem ret agg retctype "struct Item" retsize 24 retalign 8 sret nparams 4 frame 24 regs 11 temps 7    ; line 7
+  .param 0 sret.ptr : type ptr ctype "struct Item *" size 4 align 4 reg %sret.ptr sret
+  .param 1 id : type int ctype "int" size 4 align 4 reg %id
+  .param 2 score : type double ctype "double" size 8 align 8 reg %score
+  .param 3 tag : type str ctype "char *" size 4 align 4 reg %tag
+  .local x : type agg ctype "struct Item" size 24 align 8 slot 0
+  .reg %sret.ptr : type ptr ctype "struct Item *"
+  .reg %id : type int ctype "int"
+  .reg %score : type double ctype "double"
+  .reg %tag : type str ctype "char *"
+begin
+  %t4 = addr x   ; line 9
+  store.w %t4, %id   ; line 9
+  %t5 = addr x   ; line 10
+  %t6 = %t5 + 8   ; line 10
+  store.d %t6, %score   ; line 10
+  %t7 = addr x   ; line 11
+  %t8 = %t7 + 16   ; line 11
+  param %t8 : str   ; line 11
+  param %tag : str   ; line 11
+  %t9 = call @strcpy, 2   ; line 11
+  %t10 = addr x   ; line 12
+  blkcopy %sret.ptr, %t10, size 24 align 8   ; line 12
+  return %sret.ptr   ; line 12
+end
+
+func @push ret ptr retctype "struct Node *" nparams 2 frame 24 regs 8 temps 5    ; line 16
+  .param 0 head : type ptr ctype "struct Node *" size 4 align 4 reg %head
+  .param 1 it : type agg ctype "struct Item" size 24 align 8 byval slot 0 from reg %it.ptr
+  .local it : type agg ctype "struct Item" size 24 align 8 slot 0
+  .reg %head : type ptr ctype "struct Node *"
+  .reg %it.ptr : type ptr ctype "struct Item *"
+  .reg %n : type ptr ctype "struct Node *"
+begin
+  %t3 = 32   ; line 17
+  param %t3 : int   ; line 17
+  %t4 = call @malloc, 1   ; line 17
+  %n = %t4   ; line 17
+  %t5 = addr it   ; line 18
+  blkcopy %n, %t5, size 24 align 8   ; line 18
+  %t6 = addr it   ; line 19
+  store.w %t6, -1   ; line 19
+  %t7 = %n + 24   ; line 20
+  store.w %t7, %head   ; line 20
+  return %n   ; line 21
+end
+
+func @append ret ptr retctype "struct Node *" nparams 2 frame 24 regs 13 temps 9    ; line 25
+  .param 0 head : type ptr ctype "struct Node *" size 4 align 4 reg %head
+  .param 1 it : type agg ctype "struct Item" size 24 align 8 byval slot 0 from reg %it.ptr
+  .local it : type agg ctype "struct Item" size 24 align 8 slot 0
+  .reg %head : type ptr ctype "struct Node *"
+  .reg %it.ptr : type ptr ctype "struct Item *"
+  .reg %n : type ptr ctype "struct Node *"
+  .reg %w : type ptr ctype "struct Node *"
+begin
+  %t4 = 32   ; line 26
+  param %t4 : int   ; line 26
+  %t5 = call @malloc, 1   ; line 26
+  %n = %t5   ; line 26
+  %t6 = addr it   ; line 28
+  blkcopy %n, %t6, size 24 align 8   ; line 28
+  %t7 = %n + 24   ; line 29
+  store.w %t7, 0   ; line 29
+  if %head goto .L2   ; line 30
+  return %n   ; line 30
+.L2:
+  %w = %head   ; line 31
+.L3:
+  %t8 = %w + 24   ; line 32
+  %t9 = load.w %t8   ; line 32
+  ifFalse %t9 goto .L5   ; line 32
+  %t10 = %w + 24   ; line 32
+  %t11 = load.w %t10   ; line 32
+  %w = %t11   ; line 32
+  goto .L3   ; line 32
+.L5:
+  %t12 = %w + 24   ; line 33
+  store.w %t12, %n   ; line 33
+  return %head   ; line 34
+end
+
+func @at ret agg retctype "struct Item" retsize 24 retalign 8 sret nparams 3 frame 24 regs 15 temps 12    ; line 38
+  .param 0 sret.ptr : type ptr ctype "struct Item *" size 4 align 4 reg %sret.ptr sret
+  .param 1 head : type ptr ctype "struct Node *" size 4 align 4 reg %head
+  .param 2 k : type int ctype "int" size 4 align 4 reg %k
+  .local .ret0 : type agg ctype "struct Item" size 24 align 8 slot 0
+  .reg %sret.ptr : type ptr ctype "struct Item *"
+  .reg %head : type ptr ctype "struct Node *"
+  .reg %k : type int ctype "int"
+  .reg %t12 : type double ctype "double"
+begin
+.L6:
+  ifFalse %head goto .L8   ; line 39
+  %t3 = %k > 0   ; line 39
+  ifFalse %t3 goto .L8   ; line 39
+  %t4 = %head + 24   ; line 39
+  %t5 = load.w %t4   ; line 39
+  %head = %t5   ; line 39
+  %t6 = %k   ; line 39
+  %t7 = %t6 - 1   ; line 39
+  %k = %t7   ; line 39
+  goto .L6   ; line 39
+.L8:
+  ifFalse %head goto .L10   ; line 40
+  %t8 = %head   ; line 40
+  goto .L11   ; line 40
+.L10:
+  %t9 = addr .ret0   ; line 40
+  %t10 = -1   ; line 40
+  %t11 = addr @.fc0   ; line 40
+  %t12 = load.d %t11   ; line 40
+  %t13 = addr @.str0   ; line 40
+  param %t9 : ptr size 24 align 8 sret   ; line 40
+  param %t10 : int   ; line 40
+  param %t12 : double   ; line 40
+  param %t13 : str   ; line 40
+  %t14 = call @mkItem, 4   ; line 40
+  %t8 = %t14   ; line 40
+.L11:
+  blkcopy %sret.ptr, %t8, size 24 align 8   ; line 40
+  return %sret.ptr   ; line 40
+end
+
+func @clone ret ptr retctype "struct Node *" nparams 1 frame 0 regs 5 temps 3    ; line 43
+  .param 0 head : type ptr ctype "struct Node *" size 4 align 4 reg %head
+  .reg %head : type ptr ctype "struct Node *"
+  .reg %out : type ptr ctype "struct Node *"
+begin
+  %out = 0   ; line 44
+.L12:
+  ifFalse %head goto .L14   ; line 45
+  param %out : ptr   ; line 45
+  param %head : agg size 24 align 8   ; line 45
+  %t2 = call @append, 2   ; line 45
+  %out = %t2   ; line 45
+  %t3 = %head + 24   ; line 45
+  %t4 = load.w %t3   ; line 45
+  %head = %t4   ; line 45
+  goto .L12   ; line 45
+.L14:
+  return %out   ; line 46
+end
+
+func @total ret double retctype "double" nparams 1 frame 0 regs 9 temps 7    ; line 49
+  .param 0 head : type ptr ctype "struct Node *" size 4 align 4 reg %head
+  .reg %head : type ptr ctype "struct Node *"
+  .reg %s : type double ctype "double"
+  .reg %t3 : type double ctype "double"
+  .reg %t5 : type double ctype "double"
+  .reg %t6 : type double ctype "double"
+begin
+  %t2 = addr @.fc0   ; line 50
+  %t3 = load.d %t2   ; line 50
+  %s = %t3   ; line 50
+.L15:
+  ifFalse %head goto .L17   ; line 51
+  %t4 = %head + 8   ; line 51
+  %t5 = load.d %t4   ; line 51
+  %t6 = %s +.d %t5   ; line 51
+  %s = %t6   ; line 51
+  %t7 = %head + 24   ; line 51
+  %t8 = load.w %t7   ; line 51
+  %head = %t8   ; line 51
+  goto .L15   ; line 51
+.L17:
+  return %s   ; line 52
+end
+
+func @show ret void retctype "void" nparams 2 frame 0 regs 14 temps 12    ; line 55
+  .param 0 tag : type str ctype "char *" size 4 align 4 reg %tag
+  .param 1 head : type ptr ctype "struct Node *" size 4 align 4 reg %head
+  .reg %tag : type str ctype "char *"
+  .reg %head : type ptr ctype "struct Node *"
+  .reg %t8 : type double ctype "double"
+begin
+  %t2 = addr @.str1   ; line 56
+  param %t2 : str   ; line 56
+  param %tag : str   ; line 56
+  %t3 = call @printf, 2   ; line 56
+.L18:
+  ifFalse %head goto .L20   ; line 57
+  %t4 = addr @.str2   ; line 58
+  %t5 = load.w %head   ; line 58
+  %t6 = %head + 16   ; line 58
+  %t7 = %head + 8   ; line 58
+  %t8 = load.d %t7   ; line 58
+  param %t4 : str   ; line 58
+  param %t5 : int   ; line 58
+  param %t6 : str   ; line 58
+  param %t8 : double   ; line 58
+  %t9 = call @printf, 4   ; line 58
+  %t10 = %head + 24   ; line 59
+  %t11 = load.w %t10   ; line 59
+  %head = %t11   ; line 59
+  goto .L18   ; line 59
+.L20:
+  %t12 = addr @.str3   ; line 61
+  param %t12 : str   ; line 61
+  %t13 = call @printf, 1   ; line 61
+  return
+end
+
+func @release ret void retctype "void" nparams 1 frame 0 regs 4 temps 2    ; line 64
+  .param 0 head : type ptr ctype "struct Node *" size 4 align 4 reg %head
+  .reg %head : type ptr ctype "struct Node *"
+  .reg %n : type ptr ctype "struct Node *"
+begin
+.L21:
+  ifFalse %head goto .L23   ; line 65
+  %t2 = %head + 24   ; line 65
+  %t3 = load.w %t2   ; line 65
+  %n = %t3   ; line 65
+  param %head : ptr   ; line 65
+  call @free, 1   ; line 65
+  %head = %n   ; line 65
+  goto .L21   ; line 65
+.L23:
+  return
+end
+
+func @main ret int retctype "int" nparams 0 frame 368 regs 121 temps 118    ; line 68
+  .local probe : type agg ctype "struct Item" size 24 align 8 slot 0
+  .local got : type agg ctype "struct Item" size 24 align 8 slot 24
+  .local spare : type agg ctype "struct Node" size 32 align 8 slot 48
+  .local arr : type ptr ctype "struct Item [4]" size 96 align 8 slot 80
+  .local .ret0 : type agg ctype "struct Item" size 24 align 8 slot 176
+  .local .ret1 : type agg ctype "struct Item" size 24 align 8 slot 200
+  .local .ret2 : type agg ctype "struct Item" size 24 align 8 slot 224
+  .local .ret3 : type agg ctype "struct Item" size 24 align 8 slot 248
+  .local .ret4 : type agg ctype "struct Item" size 24 align 8 slot 272
+  .local .ret5 : type agg ctype "struct Item" size 24 align 8 slot 296
+  .local .ret6 : type agg ctype "struct Item" size 24 align 8 slot 320
+  .local .ret7 : type agg ctype "struct Item" size 24 align 8 slot 344
+  .reg %list : type ptr ctype "struct Node *"
+  .reg %copy : type ptr ctype "struct Node *"
+  .reg %i : type int ctype "int"
+  .reg %t7 : type double ctype "double"
+  .reg %t13 : type double ctype "double"
+  .reg %t20 : type double ctype "double"
+  .reg %t34 : type double ctype "double"
+  .reg %t39 : type double ctype "double"
+  .reg %t55 : type double ctype "double"
+  .reg %t72 : type double ctype "double"
+  .reg %t76 : type double ctype "double"
+  .reg %t77 : type double ctype "double"
+begin
+  %list = 0   ; line 69
+  %t3 = addr probe   ; line 71
+  memzero %t3, 24   ; line 71
+  %t4 = addr .ret0   ; line 71
+  %t5 = 7   ; line 71
+  %t6 = addr @.fc1   ; line 71
+  %t7 = load.d %t6   ; line 71
+  %t8 = addr @.str4   ; line 71
+  param %t4 : ptr size 24 align 8 sret   ; line 71
+  param %t5 : int   ; line 71
+  param %t7 : double   ; line 71
+  param %t8 : str   ; line 71
+  %t9 = call @mkItem, 4   ; line 71
+  blkcopy %t3, %t9, size 24 align 8   ; line 71
+  %t10 = addr .ret1   ; line 76
+  %t11 = 1   ; line 76
+  %t12 = addr @.fc2   ; line 76
+  %t13 = load.d %t12   ; line 76
+  %t14 = addr @.str5   ; line 76
+  param %t10 : ptr size 24 align 8 sret   ; line 76
+  param %t11 : int   ; line 76
+  param %t13 : double   ; line 76
+  param %t14 : str   ; line 76
+  %t15 = call @mkItem, 4   ; line 76
+  param %list : ptr   ; line 76
+  param %t15 : agg size 24 align 8   ; line 76
+  %t16 = call @append, 2   ; line 76
+  %list = %t16   ; line 76
+  %t17 = addr .ret2   ; line 77
+  %t18 = 2   ; line 77
+  %t19 = addr @.fc3   ; line 77
+  %t20 = load.d %t19   ; line 77
+  %t21 = addr @.str6   ; line 77
+  param %t17 : ptr size 24 align 8 sret   ; line 77
+  param %t18 : int   ; line 77
+  param %t20 : double   ; line 77
+  param %t21 : str   ; line 77
+  %t22 = call @mkItem, 4   ; line 77
+  param %list : ptr   ; line 77
+  param %t22 : agg size 24 align 8   ; line 77
+  %t23 = call @append, 2   ; line 77
+  %list = %t23   ; line 77
+  %t24 = addr probe   ; line 78
+  param %list : ptr   ; line 78
+  param %t24 : agg size 24 align 8   ; line 78
+  %t25 = call @append, 2   ; line 78
+  %list = %t25   ; line 78
+  %t26 = addr @.str7   ; line 79
+  param %t26 : str   ; line 79
+  param %list : ptr   ; line 79
+  call @show, 2   ; line 79
+  %t27 = addr @.str8   ; line 80
+  %t28 = addr probe   ; line 80
+  %t29 = load.w %t28   ; line 80
+  %t30 = addr probe   ; line 80
+  %t31 = %t30 + 16   ; line 80
+  %t32 = addr probe   ; line 80
+  %t33 = %t32 + 8   ; line 80
+  %t34 = load.d %t33   ; line 80
+  param %t27 : str   ; line 80
+  param %t29 : int   ; line 80
+  param %t31 : str   ; line 80
+  param %t34 : double   ; line 80
+  %t35 = call @printf, 4   ; line 80
+  %t36 = addr .ret3   ; line 82
+  %t37 = 0   ; line 82
+  %t38 = addr @.fc4   ; line 82
+  %t39 = load.d %t38   ; line 82
+  %t40 = addr @.str9   ; line 82
+  param %t36 : ptr size 24 align 8 sret   ; line 82
+  param %t37 : int   ; line 82
+  param %t39 : double   ; line 82
+  param %t40 : str   ; line 82
+  %t41 = call @mkItem, 4   ; line 82
+  param %list : ptr   ; line 82
+  param %t41 : agg size 24 align 8   ; line 82
+  %t42 = call @push, 2   ; line 82
+  %list = %t42   ; line 82
+  %t43 = addr @.str10   ; line 83
+  param %t43 : str   ; line 83
+  param %list : ptr   ; line 83
+  call @show, 2   ; line 83
+  %t44 = addr got   ; line 85
+  %t45 = addr .ret4   ; line 85
+  %t46 = 2   ; line 85
+  param %t45 : ptr size 24 align 8 sret   ; line 85
+  param %list : ptr   ; line 85
+  param %t46 : int   ; line 85
+  %t47 = call @at, 3   ; line 85
+  blkcopy %t44, %t47, size 24 align 8   ; line 85
+  %t48 = addr @.str11   ; line 86
+  %t49 = addr got   ; line 86
+  %t50 = load.w %t49   ; line 86
+  %t51 = addr got   ; line 86
+  %t52 = %t51 + 16   ; line 86
+  %t53 = addr got   ; line 86
+  %t54 = %t53 + 8   ; line 86
+  %t55 = load.d %t54   ; line 86
+  param %t48 : str   ; line 86
+  param %t50 : int   ; line 86
+  param %t52 : str   ; line 86
+  param %t55 : double   ; line 86
+  %t56 = call @printf, 4   ; line 86
+  %t57 = addr got   ; line 87
+  store.w %t57, 99   ; line 87
+  %t58 = addr @.str12   ; line 88
+  param %t58 : str   ; line 88
+  param %list : ptr   ; line 88
+  call @show, 2   ; line 88
+  %t59 = addr @.str13   ; line 89
+  %t60 = addr .ret5   ; line 89
+  %t61 = 9   ; line 89
+  param %t60 : ptr size 24 align 8 sret   ; line 89
+  param %list : ptr   ; line 89
+  param %t61 : int   ; line 89
+  %t62 = call @at, 3   ; line 89
+  %t63 = load.w %t62   ; line 89
+  %t64 = addr .ret6   ; line 89
+  %t65 = 9   ; line 89
+  param %t64 : ptr size 24 align 8 sret   ; line 89
+  param %list : ptr   ; line 89
+  param %t65 : int   ; line 89
+  %t66 = call @at, 3   ; line 89
+  %t67 = %t66 + 16   ; line 89
+  param %t59 : str   ; line 89
+  param %t63 : int   ; line 89
+  param %t67 : str   ; line 89
+  %t68 = call @printf, 3   ; line 89
+  param %list : ptr   ; line 91
+  %t69 = call @clone, 1   ; line 91
+  %copy = %t69   ; line 91
+  %t70 = %copy + 8   ; line 92
+  %t71 = addr @.fc5   ; line 92
+  %t72 = load.d %t71   ; line 92
+  store.d %t70, %t72   ; line 92
+  %t73 = addr @.str14   ; line 93
+  param %t73 : str   ; line 93
+  param %copy : ptr   ; line 93
+  call @show, 2   ; line 93
+  %t74 = addr @.str7   ; line 94
+  param %t74 : str   ; line 94
+  param %list : ptr   ; line 94
+  call @show, 2   ; line 94
+  %t75 = addr @.str15   ; line 95
+  param %list : ptr   ; line 95
+  %t76 = call @total, 1   ; line 95
+  param %copy : ptr   ; line 95
+  %t77 = call @total, 1   ; line 95
+  param %t75 : str   ; line 95
+  param %t76 : double   ; line 95
+  param %t77 : double   ; line 95
+  %t78 = call @printf, 3   ; line 95
+  %t79 = addr spare   ; line 98
+  blkcopy %t79, %list, size 32 align 8   ; line 98
+  %t80 = addr spare   ; line 99
+  store.w %t80, 42   ; line 99
+  %t81 = addr @.str16   ; line 100
+  %t82 = addr spare   ; line 101
+  %t83 = load.w %t82   ; line 101
+  %t84 = addr spare   ; line 101
+  %t85 = %t84 + 16   ; line 101
+  %t86 = load.w %list   ; line 101
+  %t87 = addr spare   ; line 101
+  %t88 = %t87 + 24   ; line 101
+  %t89 = load.w %t88   ; line 101
+  %t90 = %list + 24   ; line 101
+  %t91 = load.w %t90   ; line 101
+  %t92 = %t89 == %t91   ; line 101
+  param %t81 : str   ; line 101
+  param %t83 : int   ; line 101
+  param %t85 : str   ; line 101
+  param %t86 : int   ; line 101
+  param %t92 : int   ; line 101
+  %t93 = call @printf, 5   ; line 101
+  %i = 0   ; line 106
+.L24:
+  %t94 = %i < 4   ; line 106
+  ifFalse %t94 goto .L27   ; line 106
+  %t95 = addr arr   ; line 106
+  %t96 = %i * 24   ; line 106
+  %t97 = %t95 + %t96   ; line 106
+  %t98 = addr .ret7   ; line 106
+  param %t98 : ptr size 24 align 8 sret   ; line 106
+  param %list : ptr   ; line 106
+  param %i : int   ; line 106
+  %t99 = call @at, 3   ; line 106
+  blkcopy %t97, %t99, size 24 align 8   ; line 106
+  %t100 = %i   ; line 106
+  %t101 = %t100 + 1   ; line 106
+  %i = %t101   ; line 106
+  goto .L24   ; line 106
+.L27:
+  %t102 = addr arr   ; line 107
+  %t103 = %t102 + 0   ; line 107
+  %t104 = addr arr   ; line 107
+  %t105 = %t104 + 72   ; line 107
+  blkcopy %t103, %t105, size 24 align 8   ; line 107
+  %i = 0   ; line 108
+.L28:
+  %t106 = %i < 4   ; line 108
+  ifFalse %t106 goto .L31   ; line 108
+  %t107 = addr @.str17   ; line 108
+  %t108 = addr arr   ; line 108
+  %t109 = %i * 24   ; line 108
+  %t110 = %t108 + %t109   ; line 108
+  %t111 = load.w %t110   ; line 108
+  %t112 = addr arr   ; line 108
+  %t113 = %i * 24   ; line 108
+  %t114 = %t112 + %t113   ; line 108
+  %t115 = %t114 + 16   ; line 108
+  param %t107 : str   ; line 108
+  param %i : int   ; line 108
+  param %t111 : int   ; line 108
+  param %t115 : str   ; line 108
+  %t116 = call @printf, 4   ; line 108
+  %t117 = %i   ; line 108
+  %t118 = %t117 + 1   ; line 108
+  %i = %t118   ; line 108
+  goto .L28   ; line 108
+.L31:
+  param %list : ptr   ; line 111
+  call @release, 1   ; line 111
+  param %copy : ptr   ; line 112
+  call @release, 1   ; line 112
+  %t119 = addr @.str18   ; line 113
+  param %t119 : str   ; line 113
+  %t120 = call @printf, 1   ; line 113
+  return 0   ; line 114
+end

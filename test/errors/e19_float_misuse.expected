@@ -1,0 +1,9 @@
+15:6: Semantic: array subscript must have integer type, got float
+16:13: Semantic: switch expression must have integer type, got double (a floating-point value cannot be switched on)
+21:9: Semantic: case label is not an integer constant expression (its type is double)
+24:9: Semantic: invalid assignment: float to int * (there is no conversion between a floating-point type and a pointer)
+25:9: Semantic: invalid assignment: int * to double (there is no conversion between a floating-point type and a pointer)
+26:14: Semantic: invalid argument passing: double to int * (there is no conversion between a floating-point type and a pointer)
+27:17: Semantic: invalid argument passing: float to struct P
+28:9: Semantic: invalid assignment: double to struct P
+29:9: Semantic: invalid assignment: struct P to float

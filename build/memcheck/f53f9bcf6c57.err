@@ -1,0 +1,4 @@
+Lexical Error [Line 58, Col 16]: Unterminated string literal -> '" [%d %s %.'
+Syntax Error [Line 58, Col 17]: unexpected end of file (found '(')
+
+2 errors found in 'build/malformed/cut2_39_list_value.c'; no assembly written.
